@@ -127,3 +127,5 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+conf/local/
+notebooks/eda/Food_Inspections.csv
