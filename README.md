@@ -23,8 +23,8 @@ En la siguiente tabla se encuentran los integrantes del equipo:
 
 ## Summary de los datos con los que trabajamos
 
-+ Número de registros:
-+ Número de columnas:
++ Número de registros: 215,201
++ Número de columnas: 17
 + Las variables originales que integran el dataset son: 'Inspection ID', 'DBA Name', 'AKA Name', 'License #', 'Facility Type',
        'Risk', 'Address', 'City', 'State', 'Zip', 'Inspection Date',
        'Inspection Type', 'Results', 'Violations', 'Latitude', 'Longitude',
