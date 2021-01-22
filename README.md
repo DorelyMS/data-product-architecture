@@ -23,7 +23,7 @@ En la siguiente tabla se encuentran los integrantes del equipo:
 
 ## Summary de los datos con los que trabajamos
 
-+ Número de registros: 215,201 (Es importante resaltar que esta base fue extraída el día 14/01/2020 y el número de registros varía con una nueva fecha.)
++ Número de registros: 215,026 (Es importante resaltar que esta base fue extraída el día 15/01/2020 y el número de registros varía con una nueva fecha.)
 + Número de columnas: 17
 + Las variables originales que integran el dataset son: 'Inspection ID', 'DBA Name', 'AKA Name', 'License #', 'Facility Type',
        'Risk', 'Address', 'City', 'State', 'Zip', 'Inspection Date',
