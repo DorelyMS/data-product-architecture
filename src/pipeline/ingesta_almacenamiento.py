@@ -6,7 +6,7 @@ import pickle
 from sodapy import Socrata
 # import /src/utils/general as general
 import sys
-sys.path.insert(1, '/home/bruno/Repos/data-product-architecture-trabajo/src/utils')
+sys.path.insert(1, 'C:/Users/GZARAZUA/PycharmProjects/data-product-architecture/src/utils')
 import general
 
 def get_client(cred_path):
@@ -83,12 +83,12 @@ def guardar_ingesta(bucket, bucket_path, data, cred_path):
 if __name__ == "__main__":
 	
 
-	client = get_client("/home/bruno/Repos/data-product-architecture-trabajo/conf/local/credentials.yaml")
+	client = get_client("C:/Users/GZARAZUA/PycharmProjects/data-product-architecture/conf/local/credentials.yaml")
 
 	ingesta_inicial(client,5)
 
 	guardar_ingesta('data-product-architecture-4',
-	 'ingestion/test-bruno/',
+	 'ingestion/test-memo/',
 	  './datos.pkl',
-	  '/home/bruno/Repos/data-product-architecture-trabajo/conf/local/credentials.yaml')
+	  'C:/Users/GZARAZUA/PycharmProjects/data-product-architecture/conf/local/credentials.yaml')
 
