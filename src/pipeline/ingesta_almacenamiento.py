@@ -4,10 +4,10 @@ import json
 import os
 import pickle
 from sodapy import Socrata
-# import /src/utils/general as general
 import sys
-sys.path.insert(1, '/home/bruno/Repos/data-product-architecture-trabajo/src/utils')
-import general
+import src.utils.general as general
+#sys.path.insert(1, '/home/bruno/Repos/data-product-architecture-trabajo/src/utils')
+#import general
 import datetime
 
 def get_client(cred_path):
@@ -110,7 +110,7 @@ def guardar_ingesta(bucket, bucket_path, data, cred_path):
 	os.remove(data)
 
 
-def ingesta_consecutiva(cliente, fecha, limit):
+def ingesta_consecutiva(client, fecha, limit=None):
 	"""
 	 Esta función recibe como parámetros el cliente con el que nos podemos 
 	 comunicar con la API, la fecha de la que se quieren obtener nuevos datos 
@@ -150,16 +150,16 @@ def ingesta_consecutiva(cliente, fecha, limit):
 	return file_name
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
 
-	client = get_client("/home/bruno/Repos/data-product-architecture-trabajo/conf/local/credentials.yaml")
+# 	client = get_client("/home/bruno/Repos/data-product-architecture-trabajo/conf/local/credentials.yaml")
 
-	archivo = ingesta_inicial(client,1000)
+# 	#archivo = ingesta_inicial(client,1000)
 
-	#archivo = ingesta_consecutiva(client, '2021-02-21', 1000)
+# 	archivo = ingesta_consecutiva(client, '2021-02-21', 1000)
 
-	guardar_ingesta('data-product-architecture-4',
-	 'ingestion/initial/',
-	  archivo,
-	  '/home/bruno/Repos/data-product-architecture-trabajo/conf/local/credentials.yaml')
+# 	guardar_ingesta('data-product-architecture-4',
+# 	 'ingestion/consecutive/',
+# 	  archivo,
+# 	  '/home/bruno/Repos/data-product-architecture-trabajo/conf/local/credentials.yaml')
