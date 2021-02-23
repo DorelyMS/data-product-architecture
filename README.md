@@ -56,6 +56,16 @@ La pregunta analítica a contestar con el modelo predictivo es: ¿El establecimi
 
 La frecuencia de la actualización del dataset [Chicago Food Inspections](https://data.cityofchicago.org/Health-Human-Services/Food-Inspections/4ijn-s7e5) es diaria. Sin embargo, la frecuencia de actualización de nuestro producto de datos será semanal.
 
+## Análisis EDA
+
+Se hizo un análisis preeliminar (EDA) donde se muestran los hallazgos más importantes de los datos, éstos se encuentran dentro de la ruta: 
+
+-notebooks
+
+	-eda
+       
+		-Visualizaciones.ipynb
+
 ## Estructura básica del proyecto
 
 ```bash
@@ -94,5 +104,12 @@ La frecuencia de la actualización del dataset [Chicago Food Inspections](https:
 
 Figura 1. Estructura básica del proyecto.
 
-Nota: La versión de Python utilizada es Python 3.8.6
+## Requerimientos
+
+En este proyecto se utiliza un pyenv-virtualenv con la versión de 
+Python 3.6.8
+
+Para poder replicar el proyecto es necesario ejecutar dentro del ambiente virtual:
+
+<pip install -r requirements.txt> 
 
