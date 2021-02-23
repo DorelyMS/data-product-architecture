@@ -108,17 +108,11 @@ Para poder replicar el proyecto es necesario ejecutar dentro del ambiente virtua
        
 ## Instrucciones
 
-- Para tener comunicación con la API, todas las solicitudes deben incluir un token que identifica su aplicación y cada aplicación debe tener su token único. 
+- Para tener comunicación con la API, todas las solicitudes deben incluir un token que identifica su aplicación y cada aplicación debe tener su token único. Para crear un usuario y token dar click [aquí](https://data.cityofchicago.org/profile/edit/developer_settings)
 
-Para crear un usuario y token dar click [aquí](https://data.cityofchicago.org/profile/edit/developer_settings)
+- Se debe crear un archivo: ./conf/local/credentials.yaml. Este archivo debe contener las credenciales de s3  y el token de *Food Inspections* antes mencionado, a continuación se muestra un ejemplo genérico:
 
-- Dentro de conf -> local 
-
-Es necesario crear un archivo: credentials.yaml 
-
-Que contenga las credenciales de s3  y el token de Food inspections antes mencionado, a continuación se muestra un ejemplo genérico:
-
----
+```yaml
 
 s3:
 
@@ -129,4 +123,72 @@ s3:
 food_inspections:
 
    api_token: XXXX
+```
 
+- Es necesario agregar al $PYTHONPATH$ la ubicación del proyecto
+
+```bash
+export PYTHONPATH=$PWD
+```
+
+#### Ingesta Inicial
+
+* Primero es necesario crear un cliente con la función *get_client*, que tiene como parámetro la ubicación del token de Food Inspections dentro del archivo *credentials.yaml*
+
+* Para la ingesta inicial se usa la función *ingesta_inicial*, la cual recibe como parámetros el cliente, y el límite de registros a obtener. En caso de no especificar ningún límite, se obtienen todos los registros.
+
+* Finalmente, para guardar los registros en el bucket, se usa la función *guardar_ingesta*, ésta toma como parámetros:
+    - bucket donde se desea guardar
+    - ruta del bucket donde se desea guardar
+    - datos a ingestar (pkl)
+    - ruta donde se encuentran las credenciales
+
+```python
+from src.pipeline.ingesta_almacenamiento import get_client
+from src.pipeline.ingesta_almacenamiento import ingesta_inicial
+from src.pipeline.ingesta_almacenamiento import guardar_ingesta
+
+#Se obtiene cliente con función get_client
+client = get_client("./conf/local/credentials.yaml")
+
+#Se obtienen los registros con ingesta_consecutiva, regresa los datos de la API
+archivo = ingesta_inicial(client, 1000)
+
+#Se guardan los registros en el bucket
+guardar_ingesta('data_product_architecture-4', 
+  'ingestion/initial/', 
+  archivo, 
+  './conf/local/credentials.yaml')
+
+```
+
+#### Ingesta Consecutiva
+
+* Al igual que en la ingesta inicial,  primero es necesario crear un cliente con la función *get_client*.
+
+* Para la ingesta consecutiva se usa la función *ingesta_consecutiva*, la cual recibe como parámetros:
+    - cliente
+    - fecha de la que se quieren obtener los datos
+    - límite de registros a obtener, en caso de no especificar ningún límite, se obtienen todos los registros.
+
+
+* Finalmente, para guardar los registros en el bucket, se usa la función *guardar_ingesta*
+
+```python
+from src.pipeline.ingesta_almacenamiento import get_client
+from src.pipeline.ingesta_almacenamiento import ingesta_consecutiva
+from src.pipeline.ingesta_almacenamiento import guardar_ingesta
+
+#Se obtiene cliente con función get_client
+client = get_client("./conf/local/credentials.yaml")
+
+#Se obtienen los registros con ingesta_consecutiva, regresa los datos de la API
+archivo = ingesta_consecutiva(client, '2021-01-21', 1000)
+
+#Se guardan los registros en el bucket
+guardar_ingesta('data_product_architecture-4', 
+  'ingestion/consecutive/', 
+  archivo, 
+  './conf/local/credentials.yaml')
+
+```
