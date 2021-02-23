@@ -29,7 +29,7 @@ En la siguiente tabla se encuentran los integrantes del equipo:
        'Risk', 'Address', 'City', 'State', 'Zip', 'Inspection Date',
        'Inspection Type', 'Results', 'Violations', 'Latitude', 'Longitude',
        'Location'.
-+ A continuación agregamos la información correspondiente a la descripción de cada variable la cual fue tomada directamente de la [referencia oficinal](http://bit.ly/tS9IE8) sugerida para su consulta dentro del portal [Chicago Food Inspections](https://data.cityofchicago.org/Health-Human-Services/Food-Inspections/4ijn-s7e5) 
++ A continuación agregamos la información correspondiente a la descripción de cada variable la cual fue tomada directamente de la [referencia oficial](http://bit.ly/tS9IE8) sugerida para su consulta dentro del portal [Chicago Food Inspections](https://data.cityofchicago.org/Health-Human-Services/Food-Inspections/4ijn-s7e5) 
     + **Inspection ID**: Es el ID o número único asignado a la inspección.
   + **DBA Name:** Esta variable corresponde al nombre legal del establecimiento. DBA significa: 'Doing business as'.
   + **AKA Name:** Esta variable corresponde al nombre comercial del establecimiento, es decir, el nombre con el que sus clientes identifican al restaurante. AKA significa 'Also known as'.
@@ -105,4 +105,28 @@ Python 3.6.8
 Para poder replicar el proyecto es necesario ejecutar dentro del ambiente virtual:
 
 <pip install -r requirements.txt> 
+       
+## Instrucciones
+
+- Para tener comunicación con la API, todas las solicitudes deben incluir un token que identifica su aplicación y cada aplicación debe tener su token único. 
+
+Para crear un usuario y token dar click [aquí](https://data.cityofchicago.org/profile/edit/developer_settings)
+
+- Dentro de conf -> local 
+
+Es necesario crear un archivo: credentials.yaml 
+
+Que contenga las credenciales de s3  y el token de Food inspections antes mencionado, a continuación se muestra un ejemplo genérico:
+
+---
+
+s3:
+
+   aws_access_key_id: XXXXXX
+
+   aws_secret_access_key: XXXXXXXXXX
+
+food_inspections:
+
+   api_token: XXXX
 
