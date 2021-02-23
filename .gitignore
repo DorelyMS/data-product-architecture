@@ -130,3 +130,4 @@ dmypy.json
 conf/local/
 notebooks/eda/Food_Inspections.csv
 notebooks/eda/Visualizaciones_ocultas.ipynb
+.idea
