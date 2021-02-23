@@ -6,7 +6,7 @@ import pickle
 from sodapy import Socrata
 # import /src/utils/general as general
 import sys
-sys.path.insert(1, 'C:/Users/GZARAZUA/PycharmProjects/data-product-architecture/src/utils')
+sys.path.insert(1, '/home/bruno/Repos/data-product-architecture-trabajo/src/utils')
 import general
 import datetime
 
@@ -29,6 +29,7 @@ def ingesta_inicial(client, limit=None):
 	"""
 
 	socrata_id = "4ijn-s7e5"
+	file_name = 'historic_inspections-' + str(datetime.date.today()) + '.pkl'
 
 	if limit is None:
 
@@ -39,17 +40,17 @@ def ingesta_inicial(client, limit=None):
 		for line in results:
 			data.append(line)
 
-		with open('datos.pkl', 'wb') as pkl:
+		with open(file_name, 'wb') as pkl:
 			pickle.dump(data, pkl)
 
 	else:
 
 		results = client.get(socrata_id, limit=limit)
 
-		with open('datos.pkl', 'wb') as pkl:
+		with open(file_name, 'wb') as pkl:
 			pickle.dump(results, pkl)
 
-	return None
+	return file_name
 
 def get_s3_resource(cred_path):
 	"""
@@ -101,22 +102,64 @@ def guardar_ingesta(bucket, bucket_path, data, cred_path):
 
 	s3 = get_s3_resource(cred_path)
 
-	# file_name = bucket_path + data.split(sep='/')[-1]
-	file_name = bucket_path + 'ingesta-inicial-' + str(datetime.date.today())
+	file_name = bucket_path + data.split(sep='/')[-1]
+	#file_name = bucket_path + 'ingesta-inicial-' + str(datetime.date.today())
 
 	s3.upload_file(data, bucket, file_name)
 
-	os.remove("C:/Users/GZARAZUA/PycharmProjects/data-product-architecture/src/pipeline/datos.pkl")
+	os.remove(data)
+
+
+def ingesta_consecutiva(cliente, fecha, limit):
+	"""
+	 Esta función recibe como parámetros el cliente con el que nos podemos 
+	 comunicar con la API, la fecha de la que se quieren obtener nuevos datos 
+	 al llamar a la API y el límite de registros para obtener de regreso.
+	"""
+
+	socrata_id = "4ijn-s7e5"
+	#hoy = datetime.date.today().strftime("%Y-%m-%d")
+	fecha_inicial = datetime.datetime.strptime(fecha, "%Y-%m-%d") 
+	fecha_inicial = fecha_inicial- datetime.timedelta(days=7)
+	fecha_inicial = fecha_inicial.strftime("%Y-%m-%d")
+
+	file_name = 'consecutive-inspections-' + str(datetime.date.today()) + '.pkl'
+
+
+	soql_query = f"inspection_date between'{fecha_inicial}' and '{fecha}'"
+	print(soql_query)
+
+	if limit is None:
+
+		results = client.get_all(socrata_id, where=soql_query)
+		data = []
+
+		for line in results:
+			data.append(line)
+
+		with open(file_name, 'wb') as pkl:
+			pickle.dump(data, pkl)
+
+	else:
+
+		results = client.get(socrata_id, limit=limit, where=soql_query)
+
+		with open(file_name, 'wb') as pkl:
+			pickle.dump(results, pkl)
+
+	return file_name
 
 
 if __name__ == "__main__":
 
 
-	client = get_client("C:/Users/GZARAZUA/PycharmProjects/data-product-architecture/conf/local/credentials.yaml")
+	client = get_client("/home/bruno/Repos/data-product-architecture-trabajo/conf/local/credentials.yaml")
 
-	ingesta_inicial(client,5)
+	archivo = ingesta_inicial(client,1000)
+
+	#archivo = ingesta_consecutiva(client, '2021-02-21', 1000)
 
 	guardar_ingesta('data-product-architecture-4',
 	 'ingestion/initial/',
-	  './datos.pkl',
-	  'C:/Users/GZARAZUA/PycharmProjects/data-product-architecture/conf/local/credentials.yaml')
+	  archivo,
+	  '/home/bruno/Repos/data-product-architecture-trabajo/conf/local/credentials.yaml')
