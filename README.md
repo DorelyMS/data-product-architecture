@@ -56,15 +56,7 @@ La pregunta analítica a contestar con el modelo predictivo es: ¿El establecimi
 
 La frecuencia de la actualización del dataset [Chicago Food Inspections](https://data.cityofchicago.org/Health-Human-Services/Food-Inspections/4ijn-s7e5) es diaria. Sin embargo, la frecuencia de actualización de nuestro producto de datos será semanal.
 
-## Análisis EDA
 
-Se hizo un análisis preeliminar (EDA) donde se muestran los hallazgos más importantes de los datos, éstos se encuentran dentro de la ruta: 
-
--notebooks
-
-	-eda
-       
-		-Visualizaciones.ipynb
 
 ## Estructura básica del proyecto
 
@@ -77,6 +69,7 @@ Se hizo un análisis preeliminar (EDA) donde se muestran los hallazgos más impo
 ├── docs                  <- Space for Sphinx documentation
 │
 ├── notebooks             <- Jupyter notebooks.
+│   ├── eda               <- Previous analisis of data
 │
 ├── references            <- Data dictionaries, manuals, and all other explanatory materials.
 │
