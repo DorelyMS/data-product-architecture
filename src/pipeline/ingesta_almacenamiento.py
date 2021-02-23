@@ -10,7 +10,7 @@ import src.utils.general as general
 #import general
 import datetime
 
-def get_client(cred_path):
+def get_client(cred_path="./conf/local/credentials.yaml"):
 	"""
 	Esta función regresa un cliente que se puede conectar a la API de inspecciones
 	de establecimiento dándole un token previamente generado.
@@ -52,7 +52,7 @@ def ingesta_inicial(client, limit=None):
 
 	return file_name
 
-def get_s3_resource(cred_path):
+def get_s3_resource(cred_path="./conf/local/credentials.yaml"):
 	"""
 	Esta función regresa un resource de S3 para poder guardar datos en el bucket
 	"""
@@ -93,7 +93,7 @@ def prueba_guardar_ingesta(bucket, bucket_path, data, cred_path):
 	s3.upload_file(data, bucket, file_name)
 
 
-def guardar_ingesta(bucket, bucket_path, data, cred_path):
+def guardar_ingesta(bucket, bucket_path, data, cred_path="./conf/local/credentials.yaml"):
 	"""
 	Esta función recibe como parámetros el nombre de tu bucket de S3, 
 	la ruta en el bucket en donde se guardarán los datos 
@@ -149,17 +149,3 @@ def ingesta_consecutiva(client, fecha, limit=None):
 
 	return file_name
 
-
-# if __name__ == "__main__":
-
-
-# 	client = get_client("/home/bruno/Repos/data-product-architecture-trabajo/conf/local/credentials.yaml")
-
-# 	#archivo = ingesta_inicial(client,1000)
-
-# 	archivo = ingesta_consecutiva(client, '2021-02-21', 1000)
-
-# 	guardar_ingesta('data-product-architecture-4',
-# 	 'ingestion/consecutive/',
-# 	  archivo,
-# 	  '/home/bruno/Repos/data-product-architecture-trabajo/conf/local/credentials.yaml')
