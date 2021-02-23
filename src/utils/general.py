@@ -4,10 +4,14 @@ def read_yaml(credentials_file):
 	"""
 	Funcion para leer archivo config
 	"""
-	with open(credentials_file, "r") as cred:
-		res = yaml.safe_load(cred)
-
-	return res
+    config = None
+    try: 
+        with open (credentials_file, 'r') as cred:
+            res = yaml.safe_load(cred)
+    except:
+        raise FileNotFoundError('Couldnt load the file')
+    
+    return res
 
 def get_api_token(credentials_file):
 	"""
@@ -23,6 +27,7 @@ def get_s3_credentials(credentials_file):
 	Funcion que devuelve credenciales de aws para bucket
 	"""
 
-	cred = read_yaml(credentials_file)['s3']
+	cred = read_yaml(credentials_file)
+    s3_cred = cred['s3']
 
-	return cred
+	return s3_cred
