@@ -69,7 +69,7 @@ La frecuencia de la actualización del dataset [Chicago Food Inspections](https:
 ├── docs                  <- Space for Sphinx documentation
 │
 ├── notebooks             <- Jupyter notebooks.
-│   ├── eda               <- Previous analisis of data
+│   ├── eda               <- In this folder you can find our Exploratory Data Analysis (EDA)
 │
 ├── references            <- Data dictionaries, manuals, and all other explanatory materials.
 │
@@ -97,32 +97,35 @@ La frecuencia de la actualización del dataset [Chicago Food Inspections](https:
 
 Figura 1. Estructura básica del proyecto.
 
-## Requerimientos
+## Requerimientos para ejecución
 
-En este proyecto se utiliza un pyenv-virtualenv con la versión de 
-Python 3.6.8
+Para poder interactuar con este repositorio, es necesario crear un pyenv-virtualenv con la versión de **Python 3.6.8**, activarlo e instalar los **requirements.txt** ejecutando el siguiente comando una vez estando dentro del ambiente virtual:
 
-Para poder replicar el proyecto es necesario ejecutar dentro del ambiente virtual:
+```bash
+pip install -r requirements.txt
+```
 
-<pip install -r requirements.txt> 
-       
-## Instrucciones
+Por otra parte, se espera que tengas un bucket de Amazon [S3](https://aws.amazon.com/es/s3/) con el nombre de **data-product-architecture-equipo-4**
 
-- Para tener comunicación con la API, todas las solicitudes deben incluir un token que identifica su aplicación y cada aplicación debe tener su token único. Para crear un usuario y token dar click [aquí](https://data.cityofchicago.org/profile/edit/developer_settings)
+## Proceso de Ingestión
 
-- Se debe crear un archivo: ./conf/local/credentials.yaml. Este archivo debe contener las credenciales de s3  y el token de *Food Inspections* antes mencionado, a continuación se muestra un ejemplo genérico:
+- Para poder ingestar los datos del dataset [Chicago Food Inspections](https://data.cityofchicago.org/Health-Human-Services/Food-Inspections/4ijn-s7e5) se utilizó una conexión con la API de Food Inspections cuya documentación puedes encontrar [aquí](https://dev.socrata.com/foundry/data.cityofchicago.org/4ijn-s7e5). La API nos permite conectarnos de manera programática y descargar los datos de Food Inspections.
+
+- Para tener comunicación con la API, todas las solicitudes deben incluir un token que identifica su aplicación y cada aplicación debe tener un token único. Para crear un usuario y token dar clic [aquí](https://data.cityofchicago.org/profile/edit/developer_settings)
+
+- Se debe crear un archivo: **./conf/local/credentials.yaml**. Este archivo debe contener las credenciales de S3  y el App Token generado de *Food Inspections* antes mencionado, a continuación se muestra un ejemplo genérico del contenido que debe tener este archivo:
 
 ```yaml
 
 s3:
 
-   aws_access_key_id: XXXXXX
+   aws_access_key_id: "XXXXXX"
 
-   aws_secret_access_key: XXXXXXXXXX
+   aws_secret_access_key: "XXXXXXXXXX"
 
 food_inspections:
 
-   api_token: XXXX
+   api_token: "XXXX"
 ```
 
 - Es necesario agregar al $PYTHONPATH$ la ubicación del proyecto
@@ -135,7 +138,7 @@ export PYTHONPATH=$PWD
 
 * Primero es necesario crear un cliente con la función *get_client*, que tiene como parámetro la ubicación del token de Food Inspections dentro del archivo *credentials.yaml*
 
-* Para la ingesta inicial se usa la función *ingesta_inicial*, la cual recibe como parámetros el cliente, y el límite de registros a obtener. En caso de no especificar ningún límite, se obtienen todos los registros.
+* Para la ingesta inicial se usa la función *ingesta_inicial*, la cual recibe como parámetros el cliente y el límite de registros a obtener. En caso de no especificar ningún límite, se obtienen todos los registros.
 
 * Finalmente, para guardar los registros en el bucket, se usa la función *guardar_ingesta*, ésta toma como parámetros:
     - bucket donde se desea guardar
