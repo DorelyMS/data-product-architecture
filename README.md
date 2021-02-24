@@ -109,11 +109,15 @@ Por otra parte, se espera que tengas un bucket de Amazon [S3](https://aws.amazon
 
 ## Proceso de Ingestión
 
+### Para ejecutar el proceso de ingestión es necesario estar posicionado en la carpeta de data-product-arquitecture
+
 - Para poder ingestar los datos del dataset [Chicago Food Inspections](https://data.cityofchicago.org/Health-Human-Services/Food-Inspections/4ijn-s7e5) se utilizó una conexión con la API de Food Inspections cuya documentación puedes encontrar [aquí](https://dev.socrata.com/foundry/data.cityofchicago.org/4ijn-s7e5). La API nos permite conectarnos de manera programática y descargar los datos de Food Inspections.
 
-- Para tener comunicación con la API, todas las solicitudes deben incluir un token que identifica su aplicación y cada aplicación debe tener un token único. Para crear un usuario y token dar clic [aquí](https://data.cityofchicago.org/profile/edit/developer_settings)
+- Para tener comunicación con la API, todas las solicitudes deben incluir un token que identifica su aplicación y cada aplicación debe tener un token único. Para crear un usuario y token dar click [aquí](https://data.cityofchicago.org/profile/edit/developer_settings)
 
-- Se debe crear un archivo: **./conf/local/credentials.yaml**. Este archivo debe contener las credenciales de S3  y el App Token generado de *Food Inspections* antes mencionado, a continuación se muestra un ejemplo genérico del contenido que debe tener este archivo:
+- Se debe crear un archivo: **./conf/local/credentials.yaml**. 
+
+Este archivo debe contener las credenciales de S3  y el App Token generado de *Food Inspections* antes mencionado, a continuación se muestra un ejemplo genérico del contenido que debe tener este archivo:
 
 ```yaml
 
@@ -128,7 +132,7 @@ food_inspections:
    api_token: "XXXX"
 ```
 
-- Es necesario agregar al $PYTHONPATH$ la ubicación del proyecto
+- Es necesario agregar al $PYTHONPATH$ (si se ejecuta en terminal) la ubicación del proyecto
 
 ```bash
 export PYTHONPATH=$PWD
@@ -152,7 +156,7 @@ from src.pipeline.ingesta_almacenamiento import ingesta_inicial
 from src.pipeline.ingesta_almacenamiento import guardar_ingesta
 
 #Se obtiene cliente con función get_client
-client = get_client("./conf/local/credentials.yaml")
+client = get_client()
 
 #Se obtienen los registros con ingesta_consecutiva, regresa los datos de la API
 archivo = ingesta_inicial(client, 1000)
@@ -160,8 +164,7 @@ archivo = ingesta_inicial(client, 1000)
 #Se guardan los registros en el bucket
 guardar_ingesta('data_product_architecture-4', 
   'ingestion/initial/', 
-  archivo, 
-  './conf/local/credentials.yaml')
+  archivo)
 
 ```
 
@@ -183,7 +186,7 @@ from src.pipeline.ingesta_almacenamiento import ingesta_consecutiva
 from src.pipeline.ingesta_almacenamiento import guardar_ingesta
 
 #Se obtiene cliente con función get_client
-client = get_client("./conf/local/credentials.yaml")
+client = get_client()
 
 #Se obtienen los registros con ingesta_consecutiva, regresa los datos de la API
 archivo = ingesta_consecutiva(client, '2021-01-21', 1000)
@@ -191,7 +194,6 @@ archivo = ingesta_consecutiva(client, '2021-01-21', 1000)
 #Se guardan los registros en el bucket
 guardar_ingesta('data_product_architecture-4', 
   'ingestion/consecutive/', 
-  archivo, 
-  './conf/local/credentials.yaml')
+  archivo)
 
 ```
