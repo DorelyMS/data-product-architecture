@@ -6,9 +6,10 @@ import pickle
 from sodapy import Socrata
 import sys
 import src.utils.general as general
-#sys.path.insert(1, '/home/bruno/Repos/data-product-architecture-trabajo/src/utils')
 #import general
 import datetime
+
+
 
 def get_client(cred_path="./conf/local/credentials.yaml"):
 	"""
@@ -67,31 +68,6 @@ def get_s3_resource(cred_path="./conf/local/credentials.yaml"):
 
 	return s3
 
-def prueba_guardar_ingesta(bucket, bucket_path, data, cred_path):
-	socrata_id = "4ijn-s7e5"
-
-	if limit is None:
-		results = client.get_all(socrata_id)
-		data = []
-		for line in results:
-			data.append(line)
-		client.put_object(Body=b'data', Bucket='bucket_name', Key='key/key.txt')
-		# with open('datos.pkl', 'wb') as pkl:
-		# 	pickle.dump(data, pkl)
-
-	else:
-		results = client.get(socrata_id, limit=limit)
-		client.put_object(Body=b'data', Bucket='bucket_name', Key='key/key.txt')
-		# with open('datos.pkl', 'wb') as pkl:
-		# 	pickle.dump(results, pkl)
-
-	s3 = get_s3_resource(cred_path)
-
-	# file_name = bucket_path + data.split(sep='/')[-1]
-	file_name=bucket_path + 'ingesta-inicial-' + str(datetime.date.today())
-
-	s3.upload_file(data, bucket, file_name)
-
 
 def guardar_ingesta(bucket, bucket_path, data, cred_path="./conf/local/credentials.yaml"):
 	"""
@@ -120,7 +96,7 @@ def ingesta_consecutiva(client, fecha, limit=None):
 	socrata_id = "4ijn-s7e5"
 	#hoy = datetime.date.today().strftime("%Y-%m-%d")
 	fecha_inicial = datetime.datetime.strptime(fecha, "%Y-%m-%d") 
-	fecha_inicial = fecha_inicial- datetime.timedelta(days=7)
+	fecha_inicial = fecha_inicial- datetime.timedelta(days=6)
 	fecha_inicial = fecha_inicial.strftime("%Y-%m-%d")
 
 	file_name = 'consecutive-inspections-' + str(datetime.date.today()) + '.pkl'
@@ -148,4 +124,8 @@ def ingesta_consecutiva(client, fecha, limit=None):
 			pickle.dump(results, pkl)
 
 	return file_name
+
+
+
+
 
