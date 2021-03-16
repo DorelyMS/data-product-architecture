@@ -208,4 +208,4 @@ Cabe mencionar que para Luigi no es necesario correr los tasks de ingesta y alma
 
 Una vez ejecutado los comandos anteriores, se presenta una captura de nuestro DAG con las tasks de Almacenamiento e Ingesta en "Done"
 
-<img src="https://dl.dropboxusercontent.com/s/pnqr87267dwdv2b/Mapa.jpeg?dl=0" heigth="500" width="1500">
+<img src="https://dl.dropboxusercontent.com/s/wad6d6hwhontuoj/Captura%20de%20Pantalla%202021-03-16%20a%20la%28s%29%200.17.08.png?dl=0" heigth="500" width="1500">
