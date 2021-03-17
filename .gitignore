@@ -127,6 +127,26 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+#conf
 conf/local/
+
+#notebooks
 notebooks/eda/Food_Inspections.csv
 notebooks/eda/Visualizaciones_ocultas.ipynb
+
+#pruebas pipeline
+src/pipeline/ex1.py
+src/pipeline/ex2.py
+src/pipeline/ex3.py
+
+#ingestion
+src/pipeline/ingestion
+src/pipeline/consecutive-inspections-2021-02-08.csv
+src/pipeline/consecutive-inspections-2021-02-08.pkl
+src/pipeline/historic_inspections-.csv
+src/pipeline/ingesta_almacenamiento_luigi.py
+src/pipeline/initial-inspections-2021-02-01.csv
+src/pipeline/initial-inspections-2021-02-01.pkl
+src/pipeline/initial-inspections-2021-03-08.pkl
+.idea
