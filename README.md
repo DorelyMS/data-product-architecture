@@ -21,7 +21,7 @@ En la siguiente tabla se encuentran los integrantes del equipo:
 | 3    |  Guillermo   | gzarazua     |
 | 4    |  Yusuri      | YusuriAR     |
 
-## Summary de los datos con los que trabajamos
+## Summary de los datos con los que trabajamos para el reporte EDA
 
 + Número de registros: 215,026 (Es importante resaltar que esta base fue extraída el día 15/01/2021 y el número de registros varía con una nueva fecha.)
 + Número de columnas: 17
@@ -57,7 +57,6 @@ La pregunta analítica a contestar con el modelo predictivo es: ¿El establecimi
 La frecuencia de la actualización del dataset [Chicago Food Inspections](https://data.cityofchicago.org/Health-Human-Services/Food-Inspections/4ijn-s7e5) es diaria. Sin embargo, la frecuencia de actualización de nuestro producto de datos será semanal.
 
 
-
 ## Estructura básica del proyecto
 
 ```bash
@@ -91,7 +90,7 @@ La frecuencia de la actualización del dataset [Chicago Food Inspections](https:
     ├── etl               <- Scripts to transform data from raw to intermediate
     │
     │
-    ├── pipeline
+    ├── pipeline          <- Script with Luigi Tasks for ingestion and storage
 
 ```
 
@@ -132,68 +131,81 @@ food_inspections:
    api_token: "XXXX"
 ```
 
-- Es necesario agregar al $PYTHONPATH$ (si se ejecuta en terminal) la ubicación del proyecto
+- Una vez posicionado en la carpeta de data-product-arquitecture es necesario agregar al $PYTHONPATH$ (si se ejecuta en terminal) la ubicación del proyecto y del código donde se ubican los tasks de Luigi que se encargan de la ingesta de datos de la API de Food Inspections y el almacenamiento en el bucket de S3.
 
 ```bash
-export PYTHONPATH=$PWD
+export PYTHONPATH=$PWD:$PYTHONPATH   
+export PYTHONPATH=./src/pipeline:$PYTHONPATH
 ```
+
+Luego debes abrir otra terminal, activar el pyenv y habilitar el scheduler de Luigi desde el browser de tu navegador con el siguiente comando:
+
+```bash
+luigid
+```
+
+Después puedes abrir un browser y escribir *localhost:8082/*
 
 #### Ingesta Inicial
 
 * Primero es necesario crear un cliente con la función *get_client*, que tiene como parámetro la ubicación del token de Food Inspections dentro del archivo *credentials.yaml*
 
-* Para la ingesta inicial se usa la función *ingesta_inicial*, la cual recibe como parámetros el cliente y el límite de registros a obtener. En caso de no especificar ningún límite, se obtienen todos los registros.
+* Para la ingesta inicial se usa la clase de Luigi *IngTask*, la cual debe recibir como parámetros: 
 
-* Finalmente, para guardar los registros en el bucket, se usa la función *guardar_ingesta*, ésta toma como parámetros:
-    - bucket donde se desea guardar
-    - ruta del bucket donde se desea guardar
-    - datos a ingestar (pkl)
-    - ruta donde se encuentran las credenciales
+    - el cliente con el que nos podemos comunicar con la API
+    - el límite de registros que queremos obtener al llamar a la API (en caso de no especificar ningún límite se obtienen todos los registros)
+    - la fecha de ejecución en formato 'YYYY-MM-DD' (la cual indica el último día de corte hasta donde se descargarán los datos históricos)
+    - el tipo de ingestión deberá ser *historic* en este caso para obtener la información desde Enero de 2010
 
-```python
-from src.pipeline.ingesta_almacenamiento import get_client
-from src.pipeline.ingesta_almacenamiento import ingesta_inicial
-from src.pipeline.ingesta_almacenamiento import guardar_ingesta
+A continuación un ejemplo de cómo generamos la ingesta histórica hasta un día determinado en formato 'YYYY-MM-DD' desde la terminal:
 
-#Se obtiene cliente con función get_client
-client = get_client()
+```bash
+luigi --module ingesta_almacenamiento IngTask --bucket-name data-product-architecture-4 --date-ing YYYY-MM-DD --type-ing historic
+```
 
-#Se obtienen los registros con ingesta_consecutiva, regresa los datos de la API
-archivo = ingesta_inicial(client, 1000)
+* Posteriormente, para el almacenamiento de los registros en el bucket de s3, se usa la clase de Luigi *AlmTask*, ésta toma como parámetros:
+    - nombre del bucket (en nuestro caso es: data-product-architecture-4) donde se desea guardar el archivo con los datos históricos en formato .pkl
+    - el tipo de ingestión que deberá ser *historic* en este caso para obtener la información desde Enero de 2010
+    - la fecha de ejecución en formato 'YYYY-MM-DD' (la cual indica el último día de corte hasta donde se descargarán los datos históricos)
 
-#Se guardan los registros en el bucket
-guardar_ingesta('data_product_architecture-4', 
-  'ingestion/initial/', 
-  archivo)
+A continuación un ejemplo de cómo corremos el task de almacenamiento desde la terminal:
 
+```bash
+luigi --module ingesta_almacenamiento_luigi AlmTask --bucket-name data-product-architecture-4 --date-ing YYYY-MM-DD --type-ing historic
 ```
 
 #### Ingesta Consecutiva
 
 * Al igual que en la ingesta inicial,  primero es necesario crear un cliente con la función *get_client*.
 
-* Para la ingesta consecutiva se usa la función *ingesta_consecutiva*, la cual recibe como parámetros:
-    - cliente
-    - fecha de la que se quieren obtener los datos
-    - límite de registros a obtener, en caso de no especificar ningún límite, se obtienen todos los registros.
+* Para la ingesta consecutiva también se usa la clase de Luigi *IngTask*, la cual debe recibir como parámetros:
+    - el cliente con el que nos podemos comunicar con la API
+    - el límite de registros que queremos obtener al llamar a la API (en caso de no especificar ningún límite se obtienen todos los registros)
+    - la fecha de ejecución en formato 'YYYY-MM-DD' (la cual indica el día de corte hasta donde se descargarán los datos de la última semana)
+    - el tipo de ingestión deberá ser *consecutive* para obtener una actualización de los últimos 7 días incluyendo la fecha de corte
 
+A continuación un ejemplo de cómo generamos la ingesta histórica hasta un día determinado en formato 'YYYY-MM-DD' desde la terminal:
 
-* Finalmente, para guardar los registros en el bucket, se usa la función *guardar_ingesta*
-
-```python
-from src.pipeline.ingesta_almacenamiento import get_client
-from src.pipeline.ingesta_almacenamiento import ingesta_consecutiva
-from src.pipeline.ingesta_almacenamiento import guardar_ingesta
-
-#Se obtiene cliente con función get_client
-client = get_client()
-
-#Se obtienen los registros con ingesta_consecutiva, regresa los datos de la API
-archivo = ingesta_consecutiva(client, '2021-01-21', 1000)
-
-#Se guardan los registros en el bucket
-guardar_ingesta('data_product_architecture-4', 
-  'ingestion/consecutive/', 
-  archivo)
-
+```bash
+luigi --module ingesta_almacenamiento IngTask --bucket-name data-product-architecture-4 --date-ing YYYY-MM-DD --type-ing consecutive
 ```
+
+* Posteriormente, para guardar los registros de la ingesta consecutiva en el bucket, se usa nuevamente la clase de Luigi *AlmTask*, ésta toma como parámetros:
+
+    - nombre del bucket (en nuestro caso es: data-product-architecture-4) donde se desea guardar el archivo con los datos históricos en formato .pkl
+    - el tipo de ingestión que deberá ser *consecutive* en este caso para obtener la información de la última semana
+    - la fecha de ejecución en formato 'YYYY-MM-DD' (la cual indica el último día de corte hasta donde se descargarán los datos de los últimos 7 días)
+
+A continuación un ejemplo de cómo corremos el task de almacenamiento desde la terminal:
+
+```bash
+luigi --module ingesta_almacenamiento_luigi AlmTask --bucket-name data-product-architecture-4 --date-ing YYYY-MM-DD --type-ing consecutive
+```
+
+Cabe mencionar que para Luigi no es necesario correr los tasks de ingesta y almacenamiento de forma individual. Sino que es posible correr directamente el task de almacenamiento para que Luigi ejecute el de ingesta primero con los parámetros de fecha y tipo de ingesta especificados.
+
+#### DAG con las tasks del Checkpoint 3 en verde
+
+Una vez ejecutado los comandos anteriores, se presenta una captura de nuestro DAG con las tasks de Almacenamiento e Ingesta en "Done"
+
+<img src="https://dl.dropboxusercontent.com/s/wad6d6hwhontuoj/Captura%20de%20Pantalla%202021-03-16%20a%20la%28s%29%200.17.08.png?dl=0" heigth="500" width="1500">
