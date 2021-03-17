@@ -171,7 +171,7 @@ luigi --module ingesta_almacenamiento IngTask --bucket-name data-product-archite
 A continuación un ejemplo de cómo corremos el task de almacenamiento desde la terminal:
 
 ```bash
-luigi --module ingesta_almacenamiento_luigi AlmTask --bucket-name data-product-architecture-4 --date-ing YYYY-MM-DD --type-ing historic
+luigi --module ingesta_almacenamiento AlmTask --bucket-name data-product-architecture-4 --date-ing YYYY-MM-DD --type-ing historic
 ```
 
 #### Ingesta Consecutiva
@@ -199,7 +199,7 @@ luigi --module ingesta_almacenamiento IngTask --bucket-name data-product-archite
 A continuación un ejemplo de cómo corremos el task de almacenamiento desde la terminal:
 
 ```bash
-luigi --module ingesta_almacenamiento_luigi AlmTask --bucket-name data-product-architecture-4 --date-ing YYYY-MM-DD --type-ing consecutive
+luigi --module ingesta_almacenamiento AlmTask --bucket-name data-product-architecture-4 --date-ing YYYY-MM-DD --type-ing consecutive
 ```
 
 Cabe mencionar que para Luigi no es necesario correr los tasks de ingesta y almacenamiento de forma individual. Sino que es posible correr directamente el task de almacenamiento para que Luigi ejecute el de ingesta primero con los parámetros de fecha y tipo de ingesta especificados.
