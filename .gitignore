@@ -130,6 +130,7 @@ dmypy.json
 
 #conf
 conf/local/
+conf/base/ingestion/
 
 #notebooks
 notebooks/eda/Food_Inspections.csv
