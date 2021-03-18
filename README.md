@@ -154,14 +154,14 @@ Después puedes abrir un browser y escribir *localhost:8082/*
     - la fecha de ingestión en formato 'YYYY-MM-DD' (la cual indica el último día de corte hasta donde se descargarán los datos históricos)
     - el tipo de ingestión deberá ser *historic*, en este caso para obtener la información desde Enero de 2010
 
-Nota: Con los valores de los parámetros tipo de ingestion y fecha de ingestión, se definirá el nombre del archivo que contendrá la información descargada, mismo que se descargará dentro de la carpeta ./conf/base
+Nota: Con los valores de los parámetros tipo de ingestion y fecha de ingestión, se definirá el nombre del archivo que contendrá la información descargada, mismo que se ubicará dentro de la carpeta ./conf/base
 
-A continuación un ejemplo de cómo generamos la ingesta histórica hasta un día determinado en formato 'YYYY-MM-DD' desde la terminal (diferente a la terminal donde se ejecutó el comando *lugid*):
+A continuación un ejemplo de cómo generamos la ingesta histórica hasta un día determinado en formato 'YYYY-MM-DD' desde la terminal (diferente a la terminal donde se ejecutó el comando *luigid*):
 
 ```bash
 luigi --module ingesta_almacenamiento IngTask --date-ing YYYY-MM-DD --type-ing historic
 ```
-Si por ejemplo la fecha que se pasa fue '2021-03-11', se archivo que contendrá la descarga se guardará con el siguiente nombre y en la suiguiente carpeta: ./conf/base/ingestion/historic/YEAR-2021/MONTH-03/historic-inspections-2021-03-11.pkl
+Si por ejemplo la fecha que se pasa fue '2021-03-11', el archivo que contendrá la descarga se guardará con el siguiente nombre y en la suiguiente carpeta: ./conf/base/ingestion/historic/YEAR-2021/MONTH-03/historic-inspections-2021-03-11.pkl
 
 * Posteriormente, para el almacenamiento de los registros en el bucket de s3, se usa la clase de Luigi *AlmTask*, ésta toma como parámetros:
     - nombre del bucket (en nuestro caso es: data-product-architecture-4) donde se desea guardar el archivo con los datos históricos en formato .pkl
@@ -178,10 +178,7 @@ luigi --module ingesta_almacenamiento AlmTask --bucket-name data-product-archite
 
 #### Ingesta Consecutiva
 
-* Al igual que en la ingesta inicial,fue necesario crear un cliente con la función *get_client*.
-
 * Para la ingesta consecutiva también se usa la clase de Luigi *IngTask*, la cual debe recibir como parámetros:
-    - el cliente con el que nos podemos comunicar con la API
     - el límite de registros que queremos obtener al llamar a la API (en caso de no especificar ningún límite se obtienen todos los registros, salvo que superen el máximo permisible de la API)
     - la fecha de ejecución en formato 'YYYY-MM-DD' (la cual indica el día de corte hasta donde se descargarán los datos de la última semana)
     - el tipo de ingestión deberá ser *consecutive* para obtener una actualización de los últimos 7 días incluyendo la fecha de corte
@@ -198,7 +195,7 @@ luigi --module ingesta_almacenamiento IngTask --date-ing YYYY-MM-DD --type-ing c
     - el tipo de ingestión que deberá ser *consecutive*
     - la fecha de ejecución en formato 'YYYY-MM-DD'
 
-Nota: Analogo al caso anterior se pasa como parámetro el tipo de ingesta y fecha de ingesta para que la clase de Luigi *AlmTask* busque por nombre el archivo que corresponde a dicha fecha y tipo de ingesta (si lo encuentra se sube al bucket de s3 y si no lo crea llamando a la clase de Luigi *IngTask* para crear el archivo .pkl en tu local y posteriormente subirlo a s3)
+Nota: Análogo al caso anterior se pasa como parámetro el tipo de ingesta y fecha de ingesta para que la clase de Luigi *AlmTask* busque por nombre el archivo que corresponde a dicha fecha y tipo de ingesta (si lo encuentra se sube al bucket de s3 y si no lo crea llamando a la clase de Luigi *IngTask* para crear el archivo .pkl en tu local y posteriormente subirlo a s3)
 
 A continuación un ejemplo de cómo corremos el task de almacenamiento desde la terminal:
 
