@@ -131,14 +131,14 @@ food_inspections:
    api_token: "XXXX"
 ```
 
-- Una vez posicionado en la carpeta de data-product-arquitecture es necesario agregar al $PYTHONPATH$ (si se ejecuta en terminal) la ubicación del proyecto y del código donde se ubican los tasks de Luigi que se encargan de la ingesta de datos de la API de Food Inspections y el almacenamiento en el bucket de S3.
+- Una vez posicionado en la carpeta de data-product-arquitecture es necesario agregar al $PYTHONPATH$ (si se ejecuta en terminal) la ubicación del proyecto y del código donde se ubican los tasks que se encargan de la ingesta de datos de la API de Food Inspections y el almacenamiento en el bucket de S3.
 
 ```bash
 export PYTHONPATH=$PWD:$PYTHONPATH   
 export PYTHONPATH=./src/pipeline:$PYTHONPATH
 ```
 
-Luego debes abrir otra terminal, activar el pyenv y habilitar el scheduler de Luigi desde el browser de tu navegador con el siguiente comando:
+Para la creación de dichos tasks, se utilizó Luigi que es un Orquestador de pipelines que utiliza un DAG para adminstrar el orden de las tareas en el pipeline. Puedes consultar la documentación de Luigi [aquí](https://luigi.readthedocs.io/en/stable/index.html). Para habilitar su scheduler desde el browser de tu navegador debes abrir otra terminal, activar el pyenv y escribir el siguiente comando:
 
 ```bash
 luigid
@@ -176,7 +176,7 @@ luigi --module ingesta_almacenamiento AlmTask --bucket-name data-product-archite
 
 #### Ingesta Consecutiva
 
-* Al igual que en la ingesta inicial,  primero es necesario crear un cliente con la función *get_client*.
+* Al igual que en la ingesta inicial,fue necesario crear un cliente con la función *get_client*.
 
 * Para la ingesta consecutiva también se usa la clase de Luigi *IngTask*, la cual debe recibir como parámetros:
     - el cliente con el que nos podemos comunicar con la API
@@ -184,7 +184,7 @@ luigi --module ingesta_almacenamiento AlmTask --bucket-name data-product-archite
     - la fecha de ejecución en formato 'YYYY-MM-DD' (la cual indica el día de corte hasta donde se descargarán los datos de la última semana)
     - el tipo de ingestión deberá ser *consecutive* para obtener una actualización de los últimos 7 días incluyendo la fecha de corte
 
-A continuación un ejemplo de cómo generamos la ingesta histórica hasta un día determinado en formato 'YYYY-MM-DD' desde la terminal:
+A continuación un ejemplo de cómo generamos la ingesta consecutiva hasta un día determinado en formato 'YYYY-MM-DD' desde la terminal:
 
 ```bash
 luigi --module ingesta_almacenamiento IngTask --bucket-name data-product-architecture-4 --date-ing YYYY-MM-DD --type-ing consecutive
@@ -202,7 +202,7 @@ A continuación un ejemplo de cómo corremos el task de almacenamiento desde la 
 luigi --module ingesta_almacenamiento AlmTask --bucket-name data-product-architecture-4 --date-ing YYYY-MM-DD --type-ing consecutive
 ```
 
-Cabe mencionar que para Luigi no es necesario correr los tasks de ingesta y almacenamiento de forma individual. Sino que es posible correr directamente el task de almacenamiento para que Luigi ejecute el de ingesta primero con los parámetros de fecha y tipo de ingesta especificados.
+Cabe mencionar que para Luigi no es necesario correr los tasks de ingesta y almacenamiento de forma individual. Sino que es posible correr directamente el task de almacenamiento para que Luigi ejecute el de ingesta primero con los parámetros de fecha y tipo de ingesta especificados. Lo anterior se debe a que en Luigi los pipelines se diseñan iniciando con la última tarea en ejecutarse, pues su diseño incluye obtener los elementos requeridos para ejecutar una tarea, si estos no han sido satisfechos entonces ejecutará antes las tareas que se requieren.
 
 #### DAG con las tasks del Checkpoint 3 en verde
 
