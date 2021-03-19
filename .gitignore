@@ -128,5 +128,13 @@ dmypy.json
 # Pyre type checker
 .pyre/
 conf/local/
+conf/base/ingestion
+
+# Notebooks
 notebooks/eda/Food_Inspections.csv
 notebooks/eda/Visualizaciones_ocultas.ipynb
+
+#Pycharm
+.idea/
+.idea
+
