@@ -161,10 +161,10 @@ A continuación un ejemplo de cómo generamos la ingesta histórica hasta un dí
 ```bash
 luigi --module ingesta_almacenamiento IngTask --date-ing YYYY-MM-DD --type-ing historic
 ```
-Si por ejemplo la fecha que se pasa fue '2021-03-11', el archivo que contendrá la descarga se guardará con el siguiente nombre y en la suiguiente carpeta: ./conf/base/ingestion/historic/YEAR-2021/MONTH-03/historic-inspections-2021-03-11.pkl
+Si por ejemplo la fecha que se pasa fue '2021-03-11', el archivo que contendrá la descarga se guardará con el siguiente nombre y en la siguiente carpeta: ./conf/base/ingestion/initial/YEAR-2021/MONTH-03/historic-inspections-2021-03-11.pkl
 
 * Posteriormente, para el almacenamiento de los registros en el bucket de s3, se usa la clase de Luigi *AlmTask*, ésta toma como parámetros:
-    - nombre del bucket (en nuestro caso es: data-product-architecture-4) donde se desea guardar el archivo con los datos históricos en formato .pkl
+    - nombre del bucket (en nuestro caso el default es: data-product-architecture-4) donde se desea guardar el archivo con los datos históricos en formato .pkl
     - el tipo de ingestión que deberá ser *historic*
     - la fecha de ejecución en formato 'YYYY-MM-DD'
 
@@ -191,7 +191,7 @@ luigi --module ingesta_almacenamiento IngTask --date-ing YYYY-MM-DD --type-ing c
 
 * Posteriormente, para guardar los registros de la ingesta consecutiva en el bucket, se usa nuevamente la clase de Luigi *AlmTask*, ésta toma como parámetros:
 
-    - nombre del bucket (en nuestro caso es: data-product-architecture-4) donde se desea guardar el archivo con los datos históricos en formato .pkl
+    - nombre del bucket (en nuestro caso el default es: data-product-architecture-4) donde se desea guardar el archivo con los datos históricos en formato .pkl
     - el tipo de ingestión que deberá ser *consecutive*
     - la fecha de ejecución en formato 'YYYY-MM-DD'
 
@@ -207,6 +207,6 @@ Para Luigi no es necesario correr los tasks de ingesta y almacenamiento de forma
 
 #### DAG con las tasks del Checkpoint 3 en verde
 
-Una vez ejecutado los comandos anteriores, se presenta una captura de nuestro DAG con las tasks de Almacenamiento e Ingesta en "Done"
+Una vez ejecutado los comandos anteriores, se presenta como ejemplo una captura de nuestro DAG con las tasks de Almacenamiento e Ingesta en "Done"
 
 <img src="https://dl.dropboxusercontent.com/s/wad6d6hwhontuoj/Captura%20de%20Pantalla%202021-03-16%20a%20la%28s%29%200.17.08.png?dl=0" heigth="500" width="1500">
