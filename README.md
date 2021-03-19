@@ -104,7 +104,7 @@ Para poder interactuar con este repositorio, debes clonar la rama main para hace
 pip install -r requirements.txt
 ```
 
-Por otra parte, se espera que tengas un bucket de Amazon [S3](https://aws.amazon.com/es/s3/) con el nombre de **data-product-architecture-equipo-4**
+Por otra parte, se espera que tengas un bucket de Amazon [S3](https://aws.amazon.com/es/s3/) en nuestro caso usamos el bucket **data-product-architecture-equipo-4**
 
 ## Proceso de Ingestión
 
@@ -161,14 +161,14 @@ A continuación un ejemplo de cómo generamos la ingesta histórica hasta un dí
 ```bash
 luigi --module ingesta_almacenamiento IngTask --date-ing YYYY-MM-DD --type-ing historic
 ```
-Si por ejemplo la fecha que se pasa fue '2021-03-11', el archivo que contendrá la descarga se guardará con el siguiente nombre y en la siguiente carpeta: ./conf/base/ingestion/initial/YEAR-2021/MONTH-03/historic-inspections-2021-03-11.pkl
+Si por ejemplo se pasa como fecha de ingestion '2021-03-11', el archivo que contendrá la descarga se guardará con el siguiente nombre y en la siguiente carpeta: ./conf/base/ingestion/initial/YEAR-2021/MONTH-03/historic-inspections-2021-03-11.pkl
 
 * Posteriormente, para el almacenamiento de los registros en el bucket de s3, se usa la clase de Luigi *AlmTask*, ésta toma como parámetros:
     - nombre del bucket (en nuestro caso el default es: data-product-architecture-4) donde se desea guardar el archivo con los datos históricos en formato .pkl
     - el tipo de ingestión que deberá ser *historic*
     - la fecha de ejecución en formato 'YYYY-MM-DD'
 
-Nota: Aquí se pasa como parámetro el tipo de ingesta y fecha de ingesta para que la clase de Luigi *AlmTask* busque por nombre el archivo que corresponde a dicha fecha y tipo de ingesta (si lo encuentra se sube al bucket de s3 y si no lo crea llamando a la clase de Luigi *IngTask* para crear el archivo .pkl en tu local y posteriormente subirlo a s3)
+Nota: Aquí se pasa como parámetro el tipo de ingesta y fecha de ingesta para que la clase de Luigi *AlmTask* busque por nombre el archivo que corresponde a dicha fecha y tipo de ingesta (si lo encuentra se sube al bucket de s3 y si no lo crea llamando a la clase de Luigi *IngTask* para generar el archivo .pkl en tu local y posteriormente subirlo a s3)
 
 A continuación un ejemplo de cómo corremos el task de almacenamiento desde la terminal:
 
