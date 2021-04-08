@@ -129,4 +129,6 @@ dmypy.json
 .pyre/
 conf/local/
 notebooks/eda/Food_Inspections.csv
-notebooks/eda/Visualizaciones_ocultas.ipynb
+notebooks/eda/Visualizaciones_ocultas.ipynbconf/base/ingestion/
+python_path.sh
+conf/base/ingestion/consecutive
