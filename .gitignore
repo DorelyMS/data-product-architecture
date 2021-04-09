@@ -132,9 +132,15 @@ conf/base/ingestion
 
 # Notebooks
 notebooks/eda/Food_Inspections.csv
+
+notebooks/eda/Visualizaciones_ocultas.ipynbconf/base/ingestion/
+python_path.sh
+conf/base/ingestion/consecutive
+
 notebooks/eda/Visualizaciones_ocultas.ipynb
 
 #Pycharm
 .idea/
 .idea
+
 
