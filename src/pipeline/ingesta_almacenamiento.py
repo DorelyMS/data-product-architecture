@@ -164,7 +164,13 @@ class IngTask(luigi.Task):
 
 	def output(self):
 		file_name = str(self.type_ing) + '-inspections-' + str(self.date_ing) + '.pkl'
-		aux_path = 'ingestion/' + str(self.type_ing) + '/YEAR-' + str(self.date_ing)[0:4] + '/MONTH-' + str(self.date_ing)[5:7] + '/'
+
+		if self.type_ing == 'consecutive':
+		    aux_path = 'ingestion/' + str(self.type_ing) + '/YEAR-' + str(self.date_ing)[0:4] + '/MONTH-' + str(self.date_ing)[5:7] + '/'
+
+		else:
+		    aux_path = 'ingestion/' + 'initial' + '/YEAR-' + str(self.date_ing)[0:4] + '/MONTH-' + str(self.date_ing)[5:7] + '/'
+
 		local_path = './conf/base/' + aux_path + file_name
 		return luigi.local_target.LocalTarget(local_path, format=luigi.format.Nop)
 
@@ -175,7 +181,7 @@ class AlmTask(luigi.Task):
 	(nube AWS), según sea historic/consecutive y que corresponde a la fecha de pasada
 	como parámetro (fecha de ingestion). Como requisito se debe tener la base, que es creada con IngTask
 	"""
-	bucket_name = luigi.Parameter()
+	bucket_name = luigi.Parameter(default='data-product-architecture-4')
 	type_ing = luigi.Parameter(default='consecutive')
 	date_ing = luigi.DateParameter(default=datetime.date.today())
 
@@ -184,7 +190,12 @@ class AlmTask(luigi.Task):
 
 	def run(self):
 		file_name = str(self.type_ing) + '-inspections-' + str(self.date_ing) + '.pkl'
-		aux_path = 'ingestion/' + str(self.type_ing) + '/YEAR-' + str(self.date_ing)[0:4] + '/MONTH-' + str(self.date_ing)[5:7] + '/'
+
+		if self.type_ing == 'consecutive':
+		    aux_path = 'ingestion/' + str(self.type_ing) + '/YEAR-' + str(self.date_ing)[0:4] + '/MONTH-' + str(self.date_ing)[5:7] + '/'
+		else:
+		    aux_path = 'ingestion/' + 'initial' + '/YEAR-' + str(self.date_ing)[0:4] + '/MONTH-' + str(self.date_ing)[5:7] + '/'
+
 		output_path = 's3://' + self.bucket_name + '/' + aux_path + file_name
 		local_path = './conf/base/' + aux_path + file_name
 
@@ -197,7 +208,12 @@ class AlmTask(luigi.Task):
 
 	def output(self):
 		file_name = str(self.type_ing) + '-inspections-' + str(self.date_ing) + '.pkl'
-		aux_path = 'ingestion/' + str(self.type_ing) + '/YEAR-' + str(self.date_ing)[0:4] + '/MONTH-' + str(self.date_ing)[5:7] + '/'
+
+		if self.type_ing == 'consecutive':
+		    aux_path = 'ingestion/' + str(self.type_ing) + '/YEAR-' + str(self.date_ing)[0:4] + '/MONTH-' + str(self.date_ing)[5:7] + '/'
+		else:
+		    aux_path = 'ingestion/' + 'initial' + '/YEAR-' + str(self.date_ing)[0:4] + '/MONTH-' + str(self.date_ing)[5:7] + '/'
+
 		output_path = 's3://' + self.bucket_name + '/' + aux_path + file_name
 
 		s3_creds = general.get_s3_credentials("./conf/local/credentials.yaml")
