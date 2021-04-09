@@ -48,6 +48,9 @@ if __name__ == "__main__":
 	        {
 	            'Name': 'Spark'
 	        },
+	        {
+	            'Name': 'Zeppelin'
+	        },
 	    ],
 	    Instances={
 	        'InstanceGroups': [
@@ -81,7 +84,7 @@ if __name__ == "__main__":
      #            }
 	    #     },
 	    # ],
-	    # VisibleToAllUsers=True,
+	    VisibleToAllUsers=True,
 	    JobFlowRole='EMR_EC2_DefaultRole',
 	    ServiceRole='EMR_DefaultRole',
 	)
