@@ -193,9 +193,7 @@ class IngMetaTask(CopyToTable):
 		'date_ing': self.date_ing.strftime("%Y-%m-%d"),
 		'date_inic': (self.date_ing - datetime.timedelta(days=6)).strftime("%Y-%m-%d"),
 		'num_registros': len(file),
-		'bucket': self.bucket_name,
-		'variables': list(file[0].keys()),
-		'host': socket.gethostbyname(socket.gethostname())
+		'variables': list(file[0].keys())
 		}
 
 		print("Ingestion metadata")
@@ -261,3 +259,59 @@ class AlmTask(luigi.Task):
 		aws_secret_access_key=s3_creds['aws_secret_access_key'])
 
 		return luigi.contrib.s3.S3Target(path=output_path, client=client, format=luigi.format.Nop)
+
+
+class AlmMetaTask(CopyToTable):
+	"""
+	Clase de Luigi que guarda los metadatos de Ingesta
+	"""	
+
+	bucket_name = luigi.Parameter(default='data-product-architecture-4')
+	type_ing = luigi.Parameter(default='consecutive')
+	date_ing = luigi.DateParameter(default=datetime.date.today())
+
+	fecha_ejecucion = datetime.datetime.now()
+	tarea = "Almacenamiento"
+
+	creds = general.get_db_credentials("./conf/local/credentials.yaml")
+
+	user = creds['user']
+	password = creds['password']
+	database = creds['database']
+	host = creds['host']
+	port = creds['port']
+	table = 'meta.metadata'
+
+	columns = [
+	("fecha_ejecucion", "timestamp"),
+	("tarea", "text"),
+	("usuario", "text"),
+	("metadata", "jsonb")
+	]
+
+	def requires(self):
+		return AlmTask(bucket_name=self.bucket_name,
+			type_ing=self.type_ing,
+			date_ing=self.date_ing)
+
+	def rows(self):
+
+
+		metadata = {
+		'type_ing': self.type_ing,
+		'date_ing': self.date_ing.strftime("%Y-%m-%d"),
+		'date_inic': (self.date_ing - datetime.timedelta(days=6)).strftime("%Y-%m-%d"),
+		'bucket': self.bucket_name,
+		'host': socket.gethostbyname(socket.gethostname())
+		}
+
+		print("Almacenamiento metadata")
+		print(self.fecha_ejecucion)
+		print(self.tarea)
+		print(metadata)
+
+		r = [
+		(self.fecha_ejecucion, self.tarea, self.user, json.dumps(metadata))
+		]
+		for element in r:
+			yield element
