@@ -154,9 +154,9 @@ class IngMetaTask(CopyToTable):
 
 	fecha_ejecucion = datetime.datetime.now()
 	tarea = "Ingestion"
-	bucket_name = luigi.Parameter()
-	date_ing = luigi.DateParameter()
-	type_ing = luigi.Parameter()
+	bucket_name = luigi.Parameter(default='data-product-architecture-4')
+	type_ing = luigi.Parameter(default='consecutive')
+	date_ing = luigi.DateParameter(default=datetime.date.today())
 
 	creds = general.get_db_credentials("./conf/local/credentials.yaml")
 
@@ -315,3 +315,71 @@ class AlmMetaTask(CopyToTable):
 		]
 		for element in r:
 			yield element
+
+class PrepTask(CopyToTable):
+	"""
+	Clase de Luigi que guarda los metadatos de Ingesta
+	"""	
+
+	bucket_name = luigi.Parameter(default='data-product-architecture-4')
+	type_ing = luigi.Parameter(default='consecutive')
+	date_ing = luigi.DateParameter(default=datetime.date.today())
+
+	creds = general.get_db_credentials("./conf/local/credentials.yaml")
+
+	user = creds['user']
+	password = creds['password']
+	database = creds['database']
+	host = creds['host']
+	port = creds['port']
+	table = 'clean.clean'
+
+	columns = [("inspection_id", "text"),
+	("dba_name", "text"),
+	("aka_name", "text"),
+	("license_", "text"),
+	("facility_type", "text"),
+	("risk", "text"),
+	("address", "text"),
+	("city", "text"),
+	("state", "text"),
+	("zip", "text"),
+	("inspection_date", "text"),
+	("inspection_type", "text"),
+	("results", "text"),
+	("violations", "text"),
+	("latitude", "text"),
+	("longitude", "text"),
+	("location", "jsonb")
+	]
+
+	col_dic = dict(columns)
+
+	def requires(self):
+		return AlmMetaTask(bucket_name=self.bucket_name,
+			type_ing=self.type_ing,
+			date_ing=self.date_ing)
+
+	def rows(self):
+
+		file_name = str(self.type_ing) + '-inspections-' + str(self.date_ing) + '.pkl'
+		if self.type_ing == 'consecutive':
+		    aux_path = 'ingestion/' + str(self.type_ing) + '/YEAR-' + str(self.date_ing)[0:4] + '/MONTH-' + str(self.date_ing)[5:7] + '/'
+		else:
+		    aux_path = 'ingestion/' + 'initial' + '/YEAR-' + str(self.date_ing)[0:4] + '/MONTH-' + str(self.date_ing)[5:7] + '/'
+		local_path = './conf/base/' + aux_path + file_name
+		with open(local_path, 'rb') as p:
+			file = pickle.load(p)
+
+		num_registros= len(file),
+		variables= list(file[0].keys())
+
+		for p in file:
+			d = dict(self.columns)
+			for k in d: d[k] = ''
+			d.update(p)
+			q = list(d.values())
+			r = q[:-1]
+			r.append(json.dumps(q[-1]))
+			yield tuple(r)
+
