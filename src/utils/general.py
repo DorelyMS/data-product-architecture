@@ -26,3 +26,12 @@ def get_s3_credentials(credentials_file):
 	cred = read_yaml(credentials_file)['s3']
 
 	return cred
+
+def get_db_credentials(credentials_file):
+	"""
+	Funcion que devuelve credenciales de aws para bucket
+	"""
+
+	cred = read_yaml(credentials_file)['db']
+
+	return cred
