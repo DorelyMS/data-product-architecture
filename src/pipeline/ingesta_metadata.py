@@ -165,7 +165,7 @@ class IngMetaTask(CopyToTable):
 	database = creds['database']
 	host = creds['host']
 	port = creds['port']
-	table = 'meta.metadata'
+	table = 'meta.food_metadata'
 
 	columns = [
 	("fecha_ejecucion", "timestamp"),
@@ -280,7 +280,7 @@ class AlmMetaTask(CopyToTable):
 	database = creds['database']
 	host = creds['host']
 	port = creds['port']
-	table = 'meta.metadata'
+	table = 'meta.food_metadata'
 
 	columns = [
 	("fecha_ejecucion", "timestamp"),
@@ -332,24 +332,24 @@ class PrepTask(CopyToTable):
 	database = creds['database']
 	host = creds['host']
 	port = creds['port']
-	table = 'clean.clean'
+	table = 'clean.food_clean'
 
-	columns = [("inspection_id", "text"),
+	columns = [("inspection_id", "integer"),
 	("dba_name", "text"),
 	("aka_name", "text"),
-	("license_", "text"),
+	("license_", "integer"),
 	("facility_type", "text"),
 	("risk", "text"),
 	("address", "text"),
 	("city", "text"),
 	("state", "text"),
-	("zip", "text"),
-	("inspection_date", "text"),
+	("zip", "integer"),
+	("inspection_date", "date"),
 	("inspection_type", "text"),
 	("results", "text"),
 	("violations", "text"),
-	("latitude", "text"),
-	("longitude", "text"),
+	("latitude", "double precision"),
+	("longitude", "double precision"),
 	("location", "jsonb")
 	]
 
@@ -376,10 +376,61 @@ class PrepTask(CopyToTable):
 
 		for p in file:
 			d = dict(self.columns)
-			for k in d: d[k] = ''
+			for k in d: d[k] = None
 			d.update(p)
 			q = list(d.values())
 			r = q[:-1]
 			r.append(json.dumps(q[-1]))
 			yield tuple(r)
 
+class PrepMetaTask(CopyToTable):
+	"""
+	Clase de Luigi que guarda los metadatos de Ingesta
+	"""	
+
+	bucket_name = luigi.Parameter(default='data-product-architecture-4')
+	type_ing = luigi.Parameter(default='consecutive')
+	date_ing = luigi.DateParameter(default=datetime.date.today())
+
+	fecha_ejecucion = datetime.datetime.now()
+	tarea = "Preprocesamiento"
+
+	creds = general.get_db_credentials("./conf/local/credentials.yaml")
+
+	user = creds['user']
+	password = creds['password']
+	database = creds['database']
+	host = creds['host']
+	port = creds['port']
+	table = 'meta.food_metadata'
+
+	columns = [
+	("fecha_ejecucion", "timestamp"),
+	("tarea", "text"),
+	("usuario", "text"),
+	("metadata", "jsonb")
+	]
+
+	def requires(self):
+		return PrepTask(bucket_name=self.bucket_name,
+			type_ing=self.type_ing,
+			date_ing=self.date_ing)
+
+	def rows(self):
+
+		metadata = {
+		'type_ing': self.type_ing,
+		'date_ing': self.date_ing.strftime("%Y-%m-%d"),
+		'date_inic': (self.date_ing - datetime.timedelta(days=6)).strftime("%Y-%m-%d"),
+		}
+
+		print("Almacenamiento metadata")
+		print(self.fecha_ejecucion)
+		print(self.tarea)
+		print(metadata)
+
+		r = [
+		(self.fecha_ejecucion, self.tarea, self.user, json.dumps(metadata))
+		]
+		for element in r:
+			yield element
