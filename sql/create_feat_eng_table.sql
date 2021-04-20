@@ -4,8 +4,7 @@ drop table if exists clean.feature_eng;
 
 create table clean.feature_eng (
 	"inspection_id"  integer,
-	"dba_name" text,
-	--"aka_name" text,
+	"aka_name" text,
 	"license_num"  integer,
 	"facility_type" text,
 	"risk"  integer,
