@@ -1,8 +1,8 @@
 create schema if not exists clean;
 
-drop table if exists clean.clean_food_data;
+drop table if exists clean.feature_eng;
 
-create table clean.clean_food_data (
+create table clean.feature_eng (
 	"inspection_id" integer,
 	"dba_name" text,
 	"aka_name" text,
@@ -10,8 +10,6 @@ create table clean.clean_food_data (
 	"facility_type" text,
 	"risk" text,
 	"address" text,
-	"city" text,
-	"state" text,
 	"zip" integer,
 	"inspection_date" date,
 	"inspection_type" text,

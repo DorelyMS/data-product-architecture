@@ -1,18 +1,22 @@
+import numpy as np
+import pandas as pd
 import boto3
 import boto3.session
 import json
+import datetime
+import psycopg2
+import socket
 
 import pickle
 from sodapy import Socrata
 
 import src.utils.general as general
-import datetime
-import psycopg2
-import socket
+from src.etl.cleanning import cleanning
+from src.etl.feature_engineering import feature_engineering
 
 import luigi
 import luigi.contrib.s3
-from luigi.contrib.postgres import CopyToTable
+from luigi.contrib.postgres import CopyToTable, PostgresQuery
 
 
 
@@ -115,37 +119,6 @@ class IngTask(luigi.Task):
 		local_path = './conf/base/' + aux_path + file_name
 		return luigi.local_target.LocalTarget(local_path, format=luigi.format.Nop)
 
-# class IngMetaTask(luigi.Task):
-# 	"""
-# 	Clase de Luigi que guarda los metadatos de Ingesta
-# 	"""	
-# 	task_complete = False
-
-# 	bucket_name = luigi.Parameter()
-# 	date_ing = luigi.DateParameter()
-# 	type_ing = luigi.Parameter()
-
-# 	def requires(self):
-# 		return IngTask(date_ing=self.date_ing, type_ing=self.type_ing)
-
-# 	def run(self):
-# 		metadata = {
-# 		'date_ing': self.date_ing.strftime("%Y-%m-%d"),
-# 		'type_ing': self.type_ing
-# 		}
-# 		print("Ingestion metadata")
-# 		print(datetime.datetime.now())
-# 		print("ingestion")
-# 		print(metadata)
-# 		# self.task_complete = True
-
-# 		with self.output().open('w') as outfile:
-# 				json.dump(metadata, outfile)
-
-# 	# def complete(self):
-# 	# 	return self.task_complete
-# 	def output(self):
-# 		 return luigi.local_target.LocalTarget("./meta.json")
 
 class IngMetaTask(CopyToTable):
 	"""
@@ -332,25 +305,22 @@ class PrepTask(CopyToTable):
 	database = creds['database']
 	host = creds['host']
 	port = creds['port']
-	table = 'clean.food_clean'
+	table = 'clean.clean_food_data'
 
 	columns = [("inspection_id", "integer"),
 	("dba_name", "text"),
 	("aka_name", "text"),
 	("license_", "integer"),
 	("facility_type", "text"),
-	("risk", "text"),
+	("risk", "integer"),
 	("address", "text"),
-	("city", "text"),
-	("state", "text"),
 	("zip", "integer"),
 	("inspection_date", "date"),
 	("inspection_type", "text"),
 	("results", "text"),
 	("violations", "text"),
 	("latitude", "double precision"),
-	("longitude", "double precision"),
-	("location", "jsonb")
+	("longitude", "double precision")
 	]
 
 	col_dic = dict(columns)
@@ -378,10 +348,20 @@ class PrepTask(CopyToTable):
 			d = dict(self.columns)
 			for k in d: d[k] = None
 			d.update(p)
-			q = list(d.values())
-			r = q[:-1]
-			r.append(json.dumps(q[-1]))
-			yield tuple(r)
+			try:
+				d.pop('location')
+			except:
+				None
+			df = pd.DataFrame(d, index = [0])
+			df = cleanning(df)
+			# q = list(d.values())
+			# r = q[:-1]
+			# r.append(json.dumps(q[-1]))
+			try:
+				r = tuple(df.values[0])
+			except:
+				r = (None,)*16
+			yield r
 
 class PrepMetaTask(CopyToTable):
 	"""
@@ -434,3 +414,86 @@ class PrepMetaTask(CopyToTable):
 		]
 		for element in r:
 			yield element
+
+
+# class DelFeatEngTask(PostgresQuery):
+
+# 	#Para conectarse a la base
+# 	bucket_name = luigi.Parameter(default='data-product-architecture-4')
+# 	type_ing = luigi.Parameter(default='consecutive')
+# 	date_ing = luigi.DateParameter(default=datetime.date.today())
+
+
+# 	#Para conectarse a la base
+# 	creds = general.get_db_credentials("./conf/local/credentials.yaml")
+# 	user = creds['user']
+# 	password = creds['password']
+# 	database = creds['database']
+# 	host = creds['host']
+# 	port = creds['port']
+
+# 	query = "drop table if exists clean.food_clean;"
+
+# 	def requires(self):
+# 		return PrepMetaTask(bucket_name=self.bucket_name,
+# 			type_ing=self.type_ing,
+# 			date_ing=self.date_ing)
+
+
+class FeatEngTask(CopyToTable):
+
+	bucket_name = luigi.Parameter(default='data-product-architecture-4')
+	type_ing = luigi.Parameter(default='consecutive')
+	date_ing = luigi.DateParameter(default=datetime.date.today())
+
+
+	#Para conectarse a la base
+	creds = general.get_db_credentials("./conf/local/credentials.yaml")
+	user = creds['user']
+	password = creds['password']
+	database = creds['database']
+	host = creds['host']
+	port = creds['port']
+	table = 'clean.feature_eng'
+
+	columns = [("inspection_id", "integer"),
+	("dba_name", "text"),
+	("aka_name", "text"),
+	("license_", "integer"),
+	("facility_type", "text"),
+	("risk", "integer"),
+	("address", "text"),
+	("zip", "integer"),
+	("inspection_date", "date"),
+	("inspection_type", "text"),
+	("results", "text"),
+	("violations", "text"),
+	("latitude", "double precision"),
+	("longitude", "double precision")
+	]
+
+
+	query = "SELECT * FROM clean.clean_food_data;"
+
+	conn = psycopg2.connect(dbname = database,
+		user = user,
+		host = host,
+		password = password)
+	cursor = conn.cursor()
+	df = pd.read_sql_query(query, con=conn)
+	conn.close()
+
+
+	#df = pd.DataFrame(np.array(data))
+#	df = df_tot.iloc[:3,:]
+
+	def requires(self):
+		return PrepMetaTask(bucket_name=self.bucket_name,
+			type_ing=self.type_ing,
+			date_ing=self.date_ing)
+
+	def rows(self):
+
+		for r in self.df.itertuples():
+			res = r[1:]
+			yield res
