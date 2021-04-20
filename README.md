@@ -4,15 +4,15 @@ Este es el repositorio del Proyecto Final para la materia de Arquitectura de Pro
 
 ## Contenido
 
-1. [Introducción]
-2. [Summary](https://github.com/DorelyMS/data-product-architecture#summary-de-los-datos-con-los-que-trabajamos)
-3. [Pregunta analítica](https://github.com/DorelyMS/data-product-architecture/blob/main/README.md#pregunta-anal%C3%ADtica)
-4. [Frecuencia de actualización de los datos](https://github.com/DorelyMS/data-product-architecture#frecuencia-de-actualización-de-los-datos)
-5. [Overview_Pipeline]
-6. [Requerimientos_de_Infraestructura]
-7. [Instalación_y_configuración]
-8. [Ejecución]
-9. [DAG con tasks Checkpoint 04]   
+1. [Introducción](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#1-introducci%C3%B3n)
+2. [Summary](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#2-summary-de-los-datos-para-eda-actualizado-al-15-de-enero-2021)
+3. [Pregunta analítica](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#3-pregunta-anal%C3%ADtica)
+4. [Frecuencia de actualización de los datos](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#4-frecuencia-de-actualizaci%C3%B3n-de-los-datos)
+5. [Overview_Pipeline](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#5-overview-pipeline)
+6. [Requerimientos_de_Infraestructura](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#6-requerimientos-de-infraestructura)
+7. [Instalación_y_configuración](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#7-instalaci%C3%B3n-y-configuraci%C3%B3n)
+8. [Ejecución](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#8-ejecuci%C3%B3n)
+9. [DAG con tasks Checkpoint 4](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#9-dag-con-las-tasks-del-checkpoint-4-en-verde)
 10. [Estructura básica del proyecto](https://github.com/DorelyMS/data-product-architecture#estructura-básica-del-proyecto)
 11. [Integrantes del equipo](https://github.com/DorelyMS/data-product-architecture#integrantes-del-equipo)
 
@@ -206,7 +206,7 @@ luigi --module ingesta_almacenamiento AlmTask --bucket-name data-product-archite
 
 Para Luigi no es necesario correr los tasks de ingesta y almacenamiento de forma individual, sino que es posible correr directamente el task de almacenamiento para que Luigi ejecute el de ingesta primero con los parámetros de fecha y tipo de ingesta especificados. Lo anterior se debe a que en Luigi los pipelines se diseñan iniciando con la última tarea en ejecutarse, pues su diseño incluye obtener los elementos requeridos para ejecutar una tarea, si estos no han sido satisfechos entonces ejecutará antes las tareas que se requieren.
 
-#### 9. DAG con las tasks del Checkpoint 3 en verde
+#### 9. DAG con las tasks del Checkpoint 4 en verde
 
 Una vez ejecutado los comandos anteriores, se presenta como ejemplo una captura de nuestro DAG con todos los tasks en "Done".
 
