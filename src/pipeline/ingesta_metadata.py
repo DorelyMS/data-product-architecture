@@ -308,7 +308,7 @@ class PrepTask(CopyToTable):
 	table = 'clean.clean_food_data'
 
 	columns = [("inspection_id", "integer"),
-	("dba_name", "text"),
+	# ("dba_name", "text"),
 	("aka_name", "text"),
 	("license_", "integer"),
 	("facility_type", "text"),
@@ -351,14 +351,18 @@ class PrepTask(CopyToTable):
 			try:
 				d.pop('location')
 			except:
-				None
+				pass
+			try:
+				d.pop('dba_name')
+			except:
+				pass
 			df = pd.DataFrame(d, index = [0])
 			df = cleaning(df)
 
 			try:
 				yield tuple(df.values[0])
 			except:
-				None
+				pass
 
 
 class PrepMetaTask(CopyToTable):
@@ -414,48 +418,6 @@ class PrepMetaTask(CopyToTable):
 			yield element
 
 
-# class DelFeatEngTask(PostgresQuery):
-#
-# 	#Para conectarse a la base
-# 	bucket_name = luigi.Parameter(default='data-product-architecture-4')
-# 	type_ing = luigi.Parameter(default='consecutive')
-# 	date_ing = luigi.DateParameter(default=datetime.date.today())
-#
-#
-# 	#Para conectarse a la base
-# 	creds = general.get_db_credentials("./conf/local/credentials.yaml")
-# 	user = creds['user']
-# 	password = creds['password']
-# 	database = creds['database']
-# 	host = creds['host']
-# 	port = creds['port']
-# 	table = ""
-#
-# 	query = """
-# 	drop table if exists clean.feature_eng;
-# 	create table clean.feature_eng (
-# 	"inspection_id" integer,
-# 	"dba_name" text,
-# 	"aka_name" text,
-# 	"license_" integer,
-# 	"facility_type" text,
-# 	"risk" text,
-# 	"address" text,
-# 	"zip" integer,
-# 	"inspection_date" date,
-# 	"inspection_type" text,
-# 	"results" text,
-# 	"violations" text,
-# 	"latitude" double precision,
-# 	"longitude" double precision
-# 	);
-# 	"""
-#
-# 	def requires(self):
-# 		return PrepMetaTask(bucket_name=self.bucket_name,
-# 			type_ing=self.type_ing,
-# 			date_ing=self.date_ing)
-
 
 class FeatEngTask(CopyToTable):
 
@@ -476,7 +438,7 @@ class FeatEngTask(CopyToTable):
 	columns = [
 		("inspection_id", "integer"),
 		("dba_name", "text"),
-		("aka_name", "text"),
+		# ("aka_name", "text"),
 		("license_num", "integer"),
 		("facility_type", "text"),
 		("risk", "integer"),
@@ -514,9 +476,6 @@ class FeatEngTask(CopyToTable):
 		("dic", "text"),
 		("inspection_month", "integer")
 	]
-
-	#df = pd.DataFrame(np.array(data))
-#	df = df_tot.iloc[:3,:]
 
 	def requires(self):
 		return PrepMetaTask(bucket_name=self.bucket_name,

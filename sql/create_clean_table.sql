@@ -4,7 +4,7 @@ drop table if exists clean.clean_food_data;
 
 create table clean.clean_food_data (
 	"inspection_id" integer,
-	"dba_name" text,
+	--"dba_name" text,
 	"aka_name" text,
 	"license_" integer,
 	"facility_type" text,

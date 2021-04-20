@@ -6,10 +6,10 @@ import pandas as pd
 # de variables, ajustes en valores de varia
 def cleaning(df):
     df = c_standarize_column_names(df)
-    df = c_change_to_lowercase(df, ['dba_name', 'aka_name', 'facility_type', 'risk', 'city', 'state', 'inspection_type',
+    df = c_change_to_lowercase(df, ['aka_name', 'facility_type', 'risk', 'city', 'state', 'inspection_type',
                                'results', 'violations'])
     df = c_numeric_transformation_risk(df)
-    df = c_categoric_transformation(df, ['dba_name', 'aka_name', 'facility_type', 'inspection_type'])
+    df = c_categoric_transformation(df, ['aka_name', 'facility_type', 'inspection_type'])
     df = c_date_transformation('inspection_date', df)
     df = c_correct_chicago_in_state(df)
     df = c_drop_rows_not_chicago(df)
