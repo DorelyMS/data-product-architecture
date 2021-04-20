@@ -437,8 +437,8 @@ class FeatEngTask(CopyToTable):
 
 	columns = [
 		("inspection_id", "integer"),
-		("dba_name", "text"),
-		# ("aka_name", "text"),
+		#("dba_name", "text"),
+		("aka_name", "text"),
 		("license_num", "integer"),
 		("facility_type", "text"),
 		("risk", "integer"),
