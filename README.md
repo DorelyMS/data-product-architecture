@@ -210,7 +210,7 @@ Para Luigi no es necesario correr los tasks de ingesta y almacenamiento de forma
 
 Una vez ejecutado los comandos anteriores, se presenta como ejemplo una captura de nuestro DAG con todos los tasks en "Done".
 
-<img src="https://dl.dropboxusercontent.com/s/wad6d6hwhontuoj/Captura%20de%20Pantalla%202021-03-16%20a%20la%28s%29%200.17.08.png?dl=0" heigth="500" width="1500">
+<img src="https://dl.dropboxusercontent.com/s/qxxl8ycgml5l0lh/DAG_Checkpoint4.png?dl=0" heigth="500" width="1500">
 
 
 ## 10. Estructura básica del proyecto
