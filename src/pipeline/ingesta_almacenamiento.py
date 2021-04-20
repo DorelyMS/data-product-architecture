@@ -179,7 +179,7 @@ class AlmTask(luigi.Task):
 	"""
 	Clase de Luigi encargada de subir la base requerida a un bucket de s3 especificado
 	(nube AWS), según sea historic/consecutive y que corresponde a la fecha de pasada
-	como parámetro (fecha de ingestión). Como requisito se debe tener la base, que es creada con IngTask
+	como parámetro (fecha de ingestion). Como requisito se debe tener la base, que es creada con IngTask
 	"""
 	bucket_name = luigi.Parameter(default='data-product-architecture-4')
 	type_ing = luigi.Parameter(default='consecutive')
