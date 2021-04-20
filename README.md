@@ -1,27 +1,26 @@
 ## Proyecto Arquitectura de Productos de Datos
 
-Este es el repositorio del Proyecto Final para la materia de Arquitectura de Productos de Datos del semestre 2021-2 en la Maestría en Ciencia de Datos, ITAM. El presente trabajo analiza el dataset [Chicago Food Inspections](https://data.cityofchicago.org/Health-Human-Services/Food-Inspections/4ijn-s7e5) que incluye información sobre las inspecciones de restaurantes y otros establecimientos de comida en Chicago desde el 1 de Enero 2010 al presente con el fin de predecir para nuevas observaciones si el establecimiento pasará o no la inspección. 
+Este es el repositorio del Proyecto Final para la materia de Arquitectura de Productos de Datos del semestre 2021-2 en la Maestría en Ciencia de Datos, ITAM. 
 
 ## Contenido
 
-+ [Integrantes del equipo](https://github.com/DorelyMS/data-product-architecture#integrantes-del-equipo)
-+ [Summary](https://github.com/DorelyMS/data-product-architecture#summary-de-los-datos-con-los-que-trabajamos)
-+ [Pregunta analítica](https://github.com/DorelyMS/data-product-architecture/blob/main/README.md#pregunta-anal%C3%ADtica)
-+ [Frecuencia de actualización de los datos](https://github.com/DorelyMS/data-product-architecture#frecuencia-de-actualización-de-los-datos)
-+ [Estructura básica del proyecto](https://github.com/DorelyMS/data-product-architecture#estructura-básica-del-proyecto)
+1. [Introducción]
+2. [Summary](https://github.com/DorelyMS/data-product-architecture#summary-de-los-datos-con-los-que-trabajamos)
+3. [Pregunta analítica](https://github.com/DorelyMS/data-product-architecture/blob/main/README.md#pregunta-anal%C3%ADtica)
+4. [Frecuencia de actualización de los datos](https://github.com/DorelyMS/data-product-architecture#frecuencia-de-actualización-de-los-datos)
+5. [Overview_Pipeline]
+6. [Requerimientos_de_Infraestructura]
+7. [Instalación_y_configuración]
+8. [Ejecución]
+9. [DAG con tasks Checkpoint 04]   
+10. [Estructura básica del proyecto](https://github.com/DorelyMS/data-product-architecture#estructura-básica-del-proyecto)
+11. [Integrantes del equipo](https://github.com/DorelyMS/data-product-architecture#integrantes-del-equipo)
 
-## Integrantes del equipo
+## 1. Introducción
 
-En la siguiente tabla se encuentran los integrantes del equipo:
+El presente trabajo analiza el dataset [Chicago Food Inspections](https://data.cityofchicago.org/Health-Human-Services/Food-Inspections/4ijn-s7e5) que incluye información sobre las inspecciones de restaurantes y otros establecimientos de comida en Chicago desde el 1 de Enero 2010 al presente con el fin de predecir para nuevas observaciones si el establecimiento pasará o no la inspección.
 
-| #    | Persona      | Github    |
-| ---- | ------------ | --------- |
-| 1    |  Bruno       | brunocgf     |
-| 2    |  Dorely      | DorelyMS     |
-| 3    |  Guillermo   | gzarazua     |
-| 4    |  Yusuri      | YusuriAR     |
-
-## Summary de los datos con los que trabajamos para el reporte EDA
+## 2. Summary de los datos para EDA (actualizado al 15 de enero 2021)
 
 + Número de registros: 215,026 (Es importante resaltar que esta base fue extraída el día 15/01/2021 y el número de registros varía con una nueva fecha.)
 + Número de columnas: 17
@@ -48,55 +47,57 @@ En la siguiente tabla se encuentran los integrantes del equipo:
   + **Longitude:** Esta variable corresponde a la coordenada geográfica de longitud donde se localiza el establecimiento.
   + **Location:** Esta variable corresponde a las coordenadas geográficas de (longitud y latitud) donde se localiza el establecimiento.
 
-## Pregunta analítica
+## 3. Pregunta analítica
 
 La pregunta analítica a contestar con el modelo predictivo es: ¿El establecimiento pasará o no la inspección?
 
-## Frecuencia de actualización de los datos
+## 4. Frecuencia de actualización de los datos
 
 La frecuencia de la actualización del dataset [Chicago Food Inspections](https://data.cityofchicago.org/Health-Human-Services/Food-Inspections/4ijn-s7e5) es diaria. Sin embargo, la frecuencia de actualización de nuestro producto de datos será semanal.
 
+## 5. Overview Pipeline
 
-## Estructura básica del proyecto
+El pipeline diseñado para el proyecto hasta el momento incluye las siguientes etapas:
 
-```bash
-├── README.md             <- The top-level README for developers using this project.
-├── conf
-│   ├── base              <- Space for shared configurations like parameters
-│   ├── local             <- Space for local configurations, usually credentials
-│
-├── docs                  <- Space for Sphinx documentation
-│
-├── notebooks             <- Jupyter notebooks.
-│   ├── eda               <- In this folder you can find our Exploratory Data Analysis (EDA)
-│
-├── references            <- Data dictionaries, manuals, and all other explanatory materials.
-│
-├── results               <- Intermediate analysis as HTML, PDF, LaTeX, etc.
-│
-├── requirements.txt      <- The requirements file
-│
-├── .gitignore            <- Avoids uploading data, credentials, outputs, system files etc
-│
-├── infrastructure
-├── sql
-├── setup.py
-├── src                   <- Source code for use in this project.
-    ├── __init__.py       <- Makes src a Python module
-    │
-    ├── utils             <- Functions used across the project
-    │
-    │
-    ├── etl               <- Scripts to transform data from raw to intermediate
-    │
-    │
-    ├── pipeline          <- Script with Luigi Tasks for ingestion and storage
+* **Extract**: Mediante una conexión programática vía API, descargamos los datos del sitio de [Chicago Food Inspections](https://data.cityofchicago.org/Health-Human-Services/Food-Inspections/4ijn-s7e5) cuya documentación puedes encontrar [aquí](https://dev.socrata.com/foundry/data.cityofchicago.org/4ijn-s7e5).
+* **Load**: Los datos se cargan a un bucket de S3 en AWS en formato .pkl.
+* **Transform**: Se aplican tareas de Cleaning & Preprocessing y Feature Engineering para obtener las columnas que el modelo requerirá. Las tablas corresponientes se cargan en RDS.
+
+## 6. Requerimientos de Infraestructura
+
+Los datos que se utilizan son almacenados en un bucket de Amazon [S3](https://aws.amazon.com/es/s3/). Una instancia EC2 de AWS llamada Bastión se utiliza como un filtro de seguridad el cual se conecta con otra EC2 (que se generó a partir de una imagen de la EC2 de bastión) utilizada para correr todo el código; y los resultados de cada etapa son almacenados en un servicio RDS de AWS.
 
 ```
+Infraestructura: AWS
 
-Figura 1. Estructura básica del proyecto.
++ AMI: ami-025102f49d03bec05, Ubuntu Server 18.04 LTS (HVM)
++ EC2 Instance Bastion: T3.small
+  + GPU: 1
+  + vCPU: 2
+  + RAM: 2 GB
++ OS: Ubuntu Server 18.04 LTS
++ Volumes: 1
+  + Type: gp2
+  + Size: 20 GB
++ AMI: ami-0dfa90bae725936dc, Ubuntu Server 18.04 LTS (HVM)
++ EC2 Instance: c5.xlarge
+  + GPU: 1
+  + vCPU: 4
+  + RAM: 8 GB
++ OS: Ubuntu Server 18.04 LTS
++ Volumes: 1
+  + Type: gp2
+  + Size: 20 GB
++ RDS: PostgreSQL
+  + Engine: PostgreSQL
+  + Engine version: 12.5
+  + Instance: db.t2.micro
+  + vCPU: 1
+  + RAM: 1 GB
+  + Storage: 100 GB
+```
 
-## Requerimientos para ejecución
+## 7. Instalación y configuración
 
 Para poder interactuar con este repositorio, debes clonar la rama main para hacer una copia local del repo en tu máquina. Es necesario crear un pyenv-virtualenv con la versión de **Python 3.8.6**, activarlo e instalar los **requirements.txt** ejecutando el siguiente comando una vez estando dentro del ambiente virtual:
 
@@ -104,32 +105,32 @@ Para poder interactuar con este repositorio, debes clonar la rama main para hace
 pip install -r requirements.txt
 ```
 
-Por otra parte, se espera que tengas un bucket de Amazon [S3](https://aws.amazon.com/es/s3/) en nuestro caso usamos el bucket **data-product-architecture-equipo-4**
+La corrida del pipeline involucra la lectura de una serie de credenciales relacionadas con los servicios S3 y RDS de AWS así como un App Token generado de *Food Inspections* antes mencionado. Por lo que se debe crear un archivo: **./conf/local/credentials.yaml** que debe contener lo antes mencionado.
+
+- A a continuación se muestra un ejemplo genérico del contenido que debe tener este archivo:
+
+```yaml
+s3:
+   aws_access_key_id: "your_key_id"
+   aws_secret_access_key: "your_secret_key"
+
+food_inspections:
+   api_token: "your_session_token_for_API_Chicago_Food"
+
+db:
+ user: "your_user"
+ password: "your_databse_password"
+ database: "food"
+ host: "your_end-point"
+ port: "your_port"
+```
+
+
+## 8. Ejecución
 
 ## Proceso de Ingestión
 
 ### Para ejecutar el proceso de ingestión es necesario estar posicionado en la carpeta de data-product-arquitecture
-
-- Para poder ingestar los datos del dataset [Chicago Food Inspections](https://data.cityofchicago.org/Health-Human-Services/Food-Inspections/4ijn-s7e5) se utilizó una conexión con la API de Food Inspections cuya documentación puedes encontrar [aquí](https://dev.socrata.com/foundry/data.cityofchicago.org/4ijn-s7e5). La API nos permite conectarnos de manera programática y descargar los datos de Food Inspections.
-
-- Para tener comunicación con la API, todas las solicitudes deben incluir un token que identifica su aplicación y cada aplicación debe tener un token único. Para crear un usuario y token dar click [aquí](https://data.cityofchicago.org/profile/edit/developer_settings)
-
-- Se debe crear un archivo: **./conf/local/credentials.yaml**. 
-
-Este archivo debe contener las credenciales de S3  y el App Token generado de *Food Inspections* antes mencionado, a continuación se muestra un ejemplo genérico del contenido que debe tener este archivo:
-
-```yaml
-
-s3:
-
-   aws_access_key_id: "XXXXXX"
-
-   aws_secret_access_key: "XXXXXXXXXX"
-
-food_inspections:
-
-   api_token: "XXXX"
-```
 
 - Una vez posicionado en la carpeta de data-product-arquitecture es necesario agregar al $PYTHONPATH$ (si se ejecuta en terminal) la ubicación del proyecto y del código donde se ubican los tasks que se encargan de la ingesta de datos de la API de Food Inspections y el almacenamiento en el bucket de S3.
 
@@ -205,8 +206,59 @@ luigi --module ingesta_almacenamiento AlmTask --bucket-name data-product-archite
 
 Para Luigi no es necesario correr los tasks de ingesta y almacenamiento de forma individual, sino que es posible correr directamente el task de almacenamiento para que Luigi ejecute el de ingesta primero con los parámetros de fecha y tipo de ingesta especificados. Lo anterior se debe a que en Luigi los pipelines se diseñan iniciando con la última tarea en ejecutarse, pues su diseño incluye obtener los elementos requeridos para ejecutar una tarea, si estos no han sido satisfechos entonces ejecutará antes las tareas que se requieren.
 
-#### DAG con las tasks del Checkpoint 3 en verde
+#### 9. DAG con las tasks del Checkpoint 3 en verde
 
-Una vez ejecutado los comandos anteriores, se presenta como ejemplo una captura de nuestro DAG con las tasks de Almacenamiento e Ingesta en "Done"
+Una vez ejecutado los comandos anteriores, se presenta como ejemplo una captura de nuestro DAG con todos los tasks en "Done".
 
 <img src="https://dl.dropboxusercontent.com/s/wad6d6hwhontuoj/Captura%20de%20Pantalla%202021-03-16%20a%20la%28s%29%200.17.08.png?dl=0" heigth="500" width="1500">
+
+
+## 10. Estructura básica del proyecto
+
+```bash
+├── README.md             <- The top-level README for developers using this project.
+├── conf
+│   ├── base              <- Space for shared configurations like parameters
+│   ├── local             <- Space for local configurations, usually credentials
+│
+├── docs                  <- Space for Sphinx documentation
+│
+├── notebooks             <- Jupyter notebooks.
+│   ├── eda               <- In this folder you can find our Exploratory Data Analysis (EDA)
+│
+├── references            <- Data dictionaries, manuals, and all other explanatory materials.
+│
+├── results               <- Intermediate analysis as HTML, PDF, LaTeX, etc.
+│
+├── requirements.txt      <- The requirements file
+│
+├── .gitignore            <- Avoids uploading data, credentials, outputs, system files etc
+│
+├── infrastructure
+├── sql
+├── setup.py
+├── src                   <- Source code for use in this project.
+    ├── __init__.py       <- Makes src a Python module
+    │
+    ├── utils             <- Functions used across the project
+    │
+    │
+    ├── etl               <- Scripts to transform data from raw to intermediate
+    │
+    │
+    ├── pipeline          <- Script with Luigi Tasks for ingestion and storage
+```
+
+Figura 1. Estructura básica del proyecto.
+
+
+## 11. Integrantes del equipo
+
+En la siguiente tabla se encuentran los integrantes del equipo:
+
+| #    | Persona      | Github    |
+| ---- | ------------ | --------- |
+| 1    |  Bruno       | brunocgf     |
+| 2    |  Dorely      | DorelyMS     |
+| 3    |  Guillermo   | gzarazua     |
+| 4    |  Yusuri      | YusuriAR     |
