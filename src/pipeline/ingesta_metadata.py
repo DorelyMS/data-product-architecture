@@ -11,7 +11,7 @@ import pickle
 from sodapy import Socrata
 
 import src.utils.general as general
-from src.etl.cleanning import cleanning
+from src.etl.cleaning import cleaning
 from src.etl.feature_engineering import feature_engineering
 
 import luigi
@@ -353,7 +353,7 @@ class PrepTask(CopyToTable):
 			except:
 				None
 			df = pd.DataFrame(d, index = [0])
-			df = cleanning(df)
+			df = cleaning(df)
 
 			try:
 				yield tuple(df.values[0])
@@ -414,47 +414,47 @@ class PrepMetaTask(CopyToTable):
 			yield element
 
 
-class DelFeatEngTask(PostgresQuery):
-
-	#Para conectarse a la base
-	bucket_name = luigi.Parameter(default='data-product-architecture-4')
-	type_ing = luigi.Parameter(default='consecutive')
-	date_ing = luigi.DateParameter(default=datetime.date.today())
-
-
-	#Para conectarse a la base
-	creds = general.get_db_credentials("./conf/local/credentials.yaml")
-	user = creds['user']
-	password = creds['password']
-	database = creds['database']
-	host = creds['host']
-	port = creds['port']
-	table = ""
-
-	query = """
-	drop table if exists clean.feature_eng;
-	create table clean.feature_eng (
-	"inspection_id" integer,
-	"dba_name" text,
-	"aka_name" text,
-	"license_" integer,
-	"facility_type" text,
-	"risk" text,
-	"address" text,
-	"zip" integer,
-	"inspection_date" date,
-	"inspection_type" text,
-	"results" text,
-	"violations" text,
-	"latitude" double precision,
-	"longitude" double precision
-	);
-	"""
-
-	def requires(self):
-		return PrepMetaTask(bucket_name=self.bucket_name,
-			type_ing=self.type_ing,
-			date_ing=self.date_ing)
+# class DelFeatEngTask(PostgresQuery):
+#
+# 	#Para conectarse a la base
+# 	bucket_name = luigi.Parameter(default='data-product-architecture-4')
+# 	type_ing = luigi.Parameter(default='consecutive')
+# 	date_ing = luigi.DateParameter(default=datetime.date.today())
+#
+#
+# 	#Para conectarse a la base
+# 	creds = general.get_db_credentials("./conf/local/credentials.yaml")
+# 	user = creds['user']
+# 	password = creds['password']
+# 	database = creds['database']
+# 	host = creds['host']
+# 	port = creds['port']
+# 	table = ""
+#
+# 	query = """
+# 	drop table if exists clean.feature_eng;
+# 	create table clean.feature_eng (
+# 	"inspection_id" integer,
+# 	"dba_name" text,
+# 	"aka_name" text,
+# 	"license_" integer,
+# 	"facility_type" text,
+# 	"risk" text,
+# 	"address" text,
+# 	"zip" integer,
+# 	"inspection_date" date,
+# 	"inspection_type" text,
+# 	"results" text,
+# 	"violations" text,
+# 	"latitude" double precision,
+# 	"longitude" double precision
+# 	);
+# 	"""
+#
+# 	def requires(self):
+# 		return PrepMetaTask(bucket_name=self.bucket_name,
+# 			type_ing=self.type_ing,
+# 			date_ing=self.date_ing)
 
 
 class FeatEngTask(CopyToTable):
@@ -473,22 +473,47 @@ class FeatEngTask(CopyToTable):
 	port = creds['port']
 	table = 'clean.feature_eng'
 
-	columns = [("inspection_id", "integer"),
-	("dba_name", "text"),
-	("aka_name", "text"),
-	("license_", "integer"),
-	("facility_type", "text"),
-	("risk", "integer"),
-	("address", "text"),
-	("zip", "integer"),
-	("inspection_date", "date"),
-	("inspection_type", "text"),
-	("results", "text"),
-	("violations", "text"),
-	("latitude", "double precision"),
-	("longitude", "double precision")
+	columns = [
+		("inspection_id", "integer"),
+		("dba_name", "text"),
+		("aka_name", "text"),
+		("license_num", "integer"),
+		("facility_type", "text"),
+		("risk", "integer"),
+		("address", "text"),
+		("zip", "text"),
+		("inspection_date", "date"),
+		("inspection_type", "text"),
+		("results", "text"),
+		("violations", "text"),
+		("latitude", "double precision"),
+		("longitude", "double precision"),
+		("inspection_year", "integer"),
+		("pass", "text"),
+		("days_since_last_inspection", "integer"),
+		("approved_insp", "integer"),
+		("num_viol_last_insp", "integer"),
+		("mon", "text"),
+		("tue", "text"),
+		("wed", "text"),
+		("thu", "text"),
+		("fri", "text"),
+		("sat", "text"),
+		("sun", "text"),
+		("ene", "text"),
+		("feb", "text"),
+		("mar", "text"),
+		("abr", "text"),
+		("may", "text"),
+		("jun", "text"),
+		("jul", "text"),
+		("ago", "text"),
+		("sep", "text"),
+		("oct", "text"),
+		("nov", "text"),
+		("dic", "text"),
+		("inspection_month", "integer")
 	]
-
 
 	#df = pd.DataFrame(np.array(data))
 #	df = df_tot.iloc[:3,:]
@@ -507,11 +532,69 @@ class FeatEngTask(CopyToTable):
 			host = self.host,
 			password = self.password)
 		df = pd.read_sql_query(query, con=conn)
+		df = feature_engineering(df)
+
 		cursor = conn.cursor()
 		cursor.execute("drop table if exists clean.feature_eng;")
 		conn.commit()
 		conn.close()
 
+
+
 		for r in df.itertuples():
 			res = r[1:]
 			yield res
+
+
+
+class FeatEngMetaTask(CopyToTable):
+	"""
+	Clase de Luigi que guarda los metadatos de FeatEngTask
+	"""
+
+	bucket_name = luigi.Parameter(default='data-product-architecture-4')
+	type_ing = luigi.Parameter(default='consecutive')
+	date_ing = luigi.DateParameter(default=datetime.date.today())
+
+	fecha_ejecucion = datetime.datetime.now()
+	tarea = "Feature_Engineering"
+
+	creds = general.get_db_credentials("./conf/local/credentials.yaml")
+
+	user = creds['user']
+	password = creds['password']
+	database = creds['database']
+	host = creds['host']
+	port = creds['port']
+	table = 'meta.food_metadata'
+
+	columns = [
+	("fecha_ejecucion", "timestamp"),
+	("tarea", "text"),
+	("usuario", "text"),
+	("metadata", "jsonb")
+	]
+
+	def requires(self):
+		return FeatEngTask(bucket_name=self.bucket_name,
+			type_ing=self.type_ing,
+			date_ing=self.date_ing)
+
+	def rows(self):
+
+		metadata = {
+		'type_ing': self.type_ing,
+		'date_ing': self.date_ing.strftime("%Y-%m-%d"),
+		'date_inic': (self.date_ing - datetime.timedelta(days=6)).strftime("%Y-%m-%d"),
+		}
+
+		print("Feature Engineering metadata")
+		print(self.fecha_ejecucion)
+		print(self.tarea)
+		print(metadata)
+
+		r = [
+		(self.fecha_ejecucion, self.tarea, self.user, json.dumps(metadata))
+		]
+		for element in r:
+			yield element
