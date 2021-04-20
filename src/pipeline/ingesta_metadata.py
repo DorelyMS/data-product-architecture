@@ -354,14 +354,12 @@ class PrepTask(CopyToTable):
 				None
 			df = pd.DataFrame(d, index = [0])
 			df = cleanning(df)
-			# q = list(d.values())
-			# r = q[:-1]
-			# r.append(json.dumps(q[-1]))
+
 			try:
-				r = tuple(df.values[0])
+				yield tuple(df.values[0])
 			except:
-				r = (None,)*16
-			yield r
+				None
+
 
 class PrepMetaTask(CopyToTable):
 	"""
@@ -416,28 +414,47 @@ class PrepMetaTask(CopyToTable):
 			yield element
 
 
-# class DelFeatEngTask(PostgresQuery):
+class DelFeatEngTask(PostgresQuery):
 
-# 	#Para conectarse a la base
-# 	bucket_name = luigi.Parameter(default='data-product-architecture-4')
-# 	type_ing = luigi.Parameter(default='consecutive')
-# 	date_ing = luigi.DateParameter(default=datetime.date.today())
+	#Para conectarse a la base
+	bucket_name = luigi.Parameter(default='data-product-architecture-4')
+	type_ing = luigi.Parameter(default='consecutive')
+	date_ing = luigi.DateParameter(default=datetime.date.today())
 
 
-# 	#Para conectarse a la base
-# 	creds = general.get_db_credentials("./conf/local/credentials.yaml")
-# 	user = creds['user']
-# 	password = creds['password']
-# 	database = creds['database']
-# 	host = creds['host']
-# 	port = creds['port']
+	#Para conectarse a la base
+	creds = general.get_db_credentials("./conf/local/credentials.yaml")
+	user = creds['user']
+	password = creds['password']
+	database = creds['database']
+	host = creds['host']
+	port = creds['port']
+	table = ""
 
-# 	query = "drop table if exists clean.food_clean;"
+	query = """
+	drop table if exists clean.feature_eng;
+	create table clean.feature_eng (
+	"inspection_id" integer,
+	"dba_name" text,
+	"aka_name" text,
+	"license_" integer,
+	"facility_type" text,
+	"risk" text,
+	"address" text,
+	"zip" integer,
+	"inspection_date" date,
+	"inspection_type" text,
+	"results" text,
+	"violations" text,
+	"latitude" double precision,
+	"longitude" double precision
+	);
+	"""
 
-# 	def requires(self):
-# 		return PrepMetaTask(bucket_name=self.bucket_name,
-# 			type_ing=self.type_ing,
-# 			date_ing=self.date_ing)
+	def requires(self):
+		return PrepMetaTask(bucket_name=self.bucket_name,
+			type_ing=self.type_ing,
+			date_ing=self.date_ing)
 
 
 class FeatEngTask(CopyToTable):
@@ -473,17 +490,6 @@ class FeatEngTask(CopyToTable):
 	]
 
 
-	query = "SELECT * FROM clean.clean_food_data;"
-
-	conn = psycopg2.connect(dbname = database,
-		user = user,
-		host = host,
-		password = password)
-	cursor = conn.cursor()
-	df = pd.read_sql_query(query, con=conn)
-	conn.close()
-
-
 	#df = pd.DataFrame(np.array(data))
 #	df = df_tot.iloc[:3,:]
 
@@ -494,6 +500,18 @@ class FeatEngTask(CopyToTable):
 
 	def rows(self):
 
-		for r in self.df.itertuples():
+		query = "SELECT * FROM clean.clean_food_data;"
+
+		conn = psycopg2.connect(dbname = self.database,
+			user = self.user,
+			host = self.host,
+			password = self.password)
+		df = pd.read_sql_query(query, con=conn)
+		cursor = conn.cursor()
+		cursor.execute("drop table if exists clean.feature_eng;")
+		conn.commit()
+		conn.close()
+
+		for r in df.itertuples():
 			res = r[1:]
 			yield res
