@@ -130,19 +130,30 @@ db:
 
 ## Proceso de Ingestión
 
-### Para ejecutar el proceso de ingestión es necesario estar posicionado en la carpeta de data-product-arquitecture
+#### Para ejecutar los tasks, es necesario estar posicionado en la carpeta de data-product-arquitecture y ejecutar:
 
 - Una vez posicionado en la carpeta de data-product-arquitecture es necesario agregar al $PYTHONPATH$ (si se ejecuta en terminal) la ubicación del proyecto y del código donde se ubican los tasks que se encargan de la ingesta de datos de la API de Food Inspections y el almacenamiento en el bucket de S3.
 
 ```bash
-export PYTHONPATH=$PWD:$PYTHONPATH   
-export PYTHONPATH=./src/pipeline:$PYTHONPATH
+export PYTHONPATH=$PWD
 ```
 
 Para la creación de dichos tasks, se utilizó Luigi que es un Orquestador de pipelines que utiliza un DAG para adminstrar el orden de las tareas en el pipeline. Puedes consultar la documentación de Luigi [aquí](https://luigi.readthedocs.io/en/stable/index.html). Para habilitar su scheduler desde el browser de tu navegador debes abrir otra terminal, activar el pyenv y escribir el siguiente comando:
 
 ```bash
 luigid
+```
+#### Ejemplos
+
+```bash
+
+PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi AlmMetaTask --date-ing 2015-04-20 --type-ing consecutive
+
+
+PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi PrepMetaTask --date-ing 2021-04-20 --type-ing consecutive
+
+
+PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi FeatEngMetaTask --date-ing 2015-04-20 --type-ing consecutive```
 ```
 
 Después puedes abrir un browser y escribir *localhost:8082/*
