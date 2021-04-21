@@ -9,8 +9,8 @@ import socket
 
 import pickle
 from sodapy import Socrata
-
 import src.utils.general as general
+from src.utils.constants import NOMBRE_BUCKET, ID_SOCRATA, PATH_CREDENCIALES
 from src.etl.cleaning import cleaning
 from src.etl.feature_engineering import feature_engineering
 
@@ -20,7 +20,7 @@ from luigi.contrib.postgres import CopyToTable, PostgresQuery
 
 
 
-def get_client(cred_path="./conf/local/credentials.yaml"):
+def get_client(cred_path=PATH_CREDENCIALES):
 	"""
 	Esta función regresa un cliente que se puede conectar a la API de inspecciones
 	de establecimiento dándole un token previamente generado.
@@ -39,7 +39,7 @@ def ingesta_inicial(client):
 	Regresa una lista de los elementos que la API regresó.
 	"""
 
-	socrata_id = "4ijn-s7e5"
+	socrata_id = ID_SOCRATA
 	file_name = 'historic_inspections-' + str(datetime.date.today()) + '.pkl'
 
 
@@ -57,7 +57,7 @@ def ingesta_inicial(client):
 	return file_name
 
 
-def get_s3_resource(cred_path="./conf/local/credentials.yaml"):
+def get_s3_resource(cred_path=PATH_CREDENCIALES):
 	"""
 	Esta función regresa un resource de S3 para poder guardar datos en el bucket
 	"""
@@ -83,7 +83,7 @@ class IngTask(luigi.Task):
 	la fecha de ingesta
 	Las bases se descargan en la carpeta /conf/base/ separadas por tipo de ingesta, año y mes
 	"""
-	socrata_id = "4ijn-s7e5"
+	socrata_id = ID_SOCRATA
 	date_ing = luigi.DateParameter(default=datetime.date.today())
 	type_ing = luigi.Parameter(default='consecutive')
 
@@ -127,11 +127,11 @@ class IngMetaTask(CopyToTable):
 
 	fecha_ejecucion = datetime.datetime.now()
 	tarea = "Ingestion"
-	bucket_name = luigi.Parameter(default='data-product-architecture-4')
+	bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
 	type_ing = luigi.Parameter(default='consecutive')
 	date_ing = luigi.DateParameter(default=datetime.date.today())
 
-	creds = general.get_db_credentials("./conf/local/credentials.yaml")
+	creds = general.get_db_credentials(PATH_CREDENCIALES)
 
 	user = creds['user']
 	password = creds['password']
@@ -187,7 +187,7 @@ class AlmTask(luigi.Task):
 	(nube AWS), según sea historic/consecutive y que corresponde a la fecha de pasada
 	como parámetro (fecha de ingestion). Como requisito se debe tener la base, que es creada con IngTask
 	"""
-	bucket_name = luigi.Parameter(default='data-product-architecture-4')
+	bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
 	type_ing = luigi.Parameter(default='consecutive')
 	date_ing = luigi.DateParameter(default=datetime.date.today())
 
@@ -207,7 +207,7 @@ class AlmTask(luigi.Task):
 		output_path = 's3://' + self.bucket_name + '/' + aux_path + file_name
 		local_path = './conf/base/' + aux_path + file_name
 
-		s3_creds = general.get_s3_credentials("./conf/local/credentials.yaml")
+		s3_creds = general.get_s3_credentials(PATH_CREDENCIALES)
 		client = luigi.contrib.s3.S3Client(
 		aws_access_key_id=s3_creds['aws_access_key_id'],
 		aws_secret_access_key=s3_creds['aws_secret_access_key'])
@@ -226,7 +226,7 @@ class AlmTask(luigi.Task):
 
 		output_path = 's3://' + self.bucket_name + '/' + aux_path + file_name
 
-		s3_creds = general.get_s3_credentials("./conf/local/credentials.yaml")
+		s3_creds = general.get_s3_credentials(PATH_CREDENCIALES)
 		client = luigi.contrib.s3.S3Client(
 		aws_access_key_id=s3_creds['aws_access_key_id'],
 		aws_secret_access_key=s3_creds['aws_secret_access_key'])
@@ -239,14 +239,14 @@ class AlmMetaTask(CopyToTable):
 	Clase de Luigi que guarda los metadatos de Ingesta
 	"""	
 
-	bucket_name = luigi.Parameter(default='data-product-architecture-4')
+	bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
 	type_ing = luigi.Parameter(default='consecutive')
 	date_ing = luigi.DateParameter(default=datetime.date.today())
 
 	fecha_ejecucion = datetime.datetime.now()
 	tarea = "Almacenamiento"
 
-	creds = general.get_db_credentials("./conf/local/credentials.yaml")
+	creds = general.get_db_credentials(PATH_CREDENCIALES)
 
 	user = creds['user']
 	password = creds['password']
@@ -294,11 +294,11 @@ class PrepTask(CopyToTable):
 	Clase de Luigi que guarda los metadatos de Ingesta
 	"""	
 
-	bucket_name = luigi.Parameter(default='data-product-architecture-4')
+	bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
 	type_ing = luigi.Parameter(default='consecutive')
 	date_ing = luigi.DateParameter(default=datetime.date.today())
 
-	creds = general.get_db_credentials("./conf/local/credentials.yaml")
+	creds = general.get_db_credentials(PATH_CREDENCIALES)
 
 	user = creds['user']
 	password = creds['password']
@@ -371,14 +371,14 @@ class PrepMetaTask(CopyToTable):
 	Clase de Luigi que guarda los metadatos de Ingesta
 	"""	
 
-	bucket_name = luigi.Parameter(default='data-product-architecture-4')
+	bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
 	type_ing = luigi.Parameter(default='consecutive')
 	date_ing = luigi.DateParameter(default=datetime.date.today())
 
 	fecha_ejecucion = datetime.datetime.now()
 	tarea = "Preprocesamiento"
 
-	creds = general.get_db_credentials("./conf/local/credentials.yaml")
+	creds = general.get_db_credentials(PATH_CREDENCIALES)
 
 	user = creds['user']
 	password = creds['password']
@@ -422,13 +422,13 @@ class PrepMetaTask(CopyToTable):
 
 class FeatEngTask(CopyToTable):
 
-	bucket_name = luigi.Parameter(default='data-product-architecture-4')
+	bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
 	type_ing = luigi.Parameter(default='consecutive')
 	date_ing = luigi.DateParameter(default=datetime.date.today())
 
 
 	#Para conectarse a la base
-	creds = general.get_db_credentials("./conf/local/credentials.yaml")
+	creds = general.get_db_credentials(PATH_CREDENCIALES)
 	user = creds['user']
 	password = creds['password']
 	database = creds['database']
@@ -512,14 +512,14 @@ class FeatEngMetaTask(CopyToTable):
 	Clase de Luigi que guarda los metadatos de FeatEngTask
 	"""
 
-	bucket_name = luigi.Parameter(default='data-product-architecture-4')
+	bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
 	type_ing = luigi.Parameter(default='consecutive')
 	date_ing = luigi.DateParameter(default=datetime.date.today())
 
 	fecha_ejecucion = datetime.datetime.now()
 	tarea = "Feature_Engineering"
 
-	creds = general.get_db_credentials("./conf/local/credentials.yaml")
+	creds = general.get_db_credentials(PATH_CREDENCIALES)
 
 	user = creds['user']
 	password = creds['password']
