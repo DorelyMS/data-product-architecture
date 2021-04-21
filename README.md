@@ -128,94 +128,51 @@ db:
 
 ## 8. Ejecución
 
-## Proceso de Ingestión
+## Proceso de Ejecución del pipeline diseñado para el proyecto hasta el momento
 
-#### Para ejecutar los tasks, es necesario estar posicionado en la carpeta de data-product-arquitecture y ejecutar:
-
-- Una vez posicionado en la carpeta de data-product-arquitecture es necesario agregar al $PYTHONPATH$ (si se ejecuta en terminal) la ubicación del proyecto y del código donde se ubican los tasks que se encargan de la ingesta de datos de la API de Food Inspections y el almacenamiento en el bucket de S3.
+#### Para ejecutar los tasks, es necesario estar posicionado en la carpeta de data-product-arquitecture y ejecutar en terminal:
 
 ```bash
 export PYTHONPATH=$PWD
 ```
 
-Para la creación de dichos tasks, se utilizó Luigi que es un Orquestador de pipelines que utiliza un DAG para adminstrar el orden de las tareas en el pipeline. Puedes consultar la documentación de Luigi [aquí](https://luigi.readthedocs.io/en/stable/index.html). Para habilitar su scheduler desde el browser de tu navegador debes abrir otra terminal, activar el pyenv y escribir el siguiente comando:
+Dentro de src/utils/constants.py se guardaron las constantes de nuestro proyecto: PATH_CREDENCIALES, NOMBRE_BUCKET y ID_SOCRATA para referenciar la ruta del archivo **./conf/local/credentials.yaml**, colocar el nombre del BUCKET para conectarnos a S3 y guardar el ID de la API para la extracción de los datos con el objetivo de que se puedan editar si se quiere reproducir el proyecto.
+
+Para la creación de los tasks, se utilizó Luigi que es un Orquestador de pipelines que utiliza un DAG para administrar el orden de las tareas en el pipeline. Puedes consultar la documentación de Luigi [aquí](https://luigi.readthedocs.io/en/stable/index.html). Para habilitar su scheduler desde el browser de tu navegador debes abrir otra terminal, activar el pyenv y escribir el siguiente comando desde otra terminal:
 
 ```bash
 luigid
 ```
-#### Ejemplos
 
+#### Ejemplos de Ejecución 
+
+* Para la ejecución de nuestro pipeline hasta el momento, debemos ejecutar el siquiente comando:
+ 
 ```bash
-
-PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi AlmMetaTask --date-ing 2015-04-20 --type-ing consecutive
-
-
-PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi PrepMetaTask --date-ing 2021-04-20 --type-ing consecutive
-
-
-PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi FeatEngMetaTask --date-ing 2015-04-20 --type-ing consecutive```
+PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi FeatEngMetaTask --date-ing 2021-04-20 --type-ing consecutive```
 ```
 
-Después puedes abrir un browser y escribir *localhost:8082/*
-
-#### Ingesta Inicial
-
-* Para la ingesta inicial se usa la clase de Luigi *IngTask*, la cual debe recibir como parámetros: 
-
-    - el límite de registros que queremos obtener al llamar a la API (en caso de no especificar ningún límite por default se maneja "None"; no tiene ningún efecto para la descarga inicial)
-    - la fecha de ingestión en formato 'YYYY-MM-DD' (la cual indica el último día de corte hasta donde se descargarán los datos históricos)
-    - el tipo de ingestión deberá ser *historic*, en este caso para obtener la información desde Enero de 2010
-
-Nota: Con los valores de los parámetros tipo de ingestion y fecha de ingestión, se definirá el nombre del archivo que contendrá la información descargada, mismo que se ubicará dentro de la carpeta ./conf/base
-
-A continuación un ejemplo de cómo generamos la ingesta histórica hasta un día determinado en formato 'YYYY-MM-DD' desde la terminal (diferente a la terminal donde se ejecutó el comando *luigid*):
-
-```bash
-luigi --module ingesta_almacenamiento IngTask --date-ing YYYY-MM-DD --type-ing historic
-```
-Si por ejemplo se pasa como fecha de ingestion '2021-03-11', el archivo que contendrá la descarga se guardará con el siguiente nombre y en la siguiente carpeta: ./conf/base/ingestion/initial/YEAR-2021/MONTH-03/historic-inspections-2021-03-11.pkl
-
-* Posteriormente, para el almacenamiento de los registros en el bucket de s3, se usa la clase de Luigi *AlmTask*, ésta toma como parámetros:
-    - nombre del bucket (en nuestro caso el default es: data-product-architecture-4) donde se desea guardar el archivo con los datos históricos en formato .pkl
-    - el tipo de ingestión que deberá ser *historic*
-    - la fecha de ejecución en formato 'YYYY-MM-DD'
-
-Nota: Aquí se pasa como parámetro el tipo de ingesta y fecha de ingesta para que la clase de Luigi *AlmTask* busque por nombre el archivo que corresponde a dicha fecha y tipo de ingesta (si lo encuentra se sube al bucket de s3 y si no lo crea llamando a la clase de Luigi *IngTask* para generar el archivo .pkl en tu local y posteriormente subirlo a s3)
-
-A continuación un ejemplo de cómo corremos el task de almacenamiento desde la terminal:
-
-```bash
-luigi --module ingesta_almacenamiento AlmTask --bucket-name data-product-architecture-4 --date-ing YYYY-MM-DD --type-ing historic
-```
-
-#### Ingesta Consecutiva
-
-* Para la ingesta consecutiva también se usa la clase de Luigi *IngTask*, la cual debe recibir como parámetros:
-    - el límite de registros que queremos obtener al llamar a la API (en caso de no especificar ningún límite se obtienen todos los registros, salvo que superen el máximo permisible de la API)
-    - la fecha de ejecución en formato 'YYYY-MM-DD' (la cual indica el día de corte hasta donde se descargarán los datos de la última semana)
-    - el tipo de ingestión deberá ser *consecutive* para obtener una actualización de los últimos 7 días incluyendo la fecha de corte
-
-A continuación un ejemplo de cómo generamos la ingesta consecutiva hasta un día determinado en formato 'YYYY-MM-DD' desde la terminal:
-
-```bash
-luigi --module ingesta_almacenamiento IngTask --date-ing YYYY-MM-DD --type-ing consecutive
-```
-
-* Posteriormente, para guardar los registros de la ingesta consecutiva en el bucket, se usa nuevamente la clase de Luigi *AlmTask*, ésta toma como parámetros:
+Dicho comando aplica todo el Pipeline con los metadatos asociados al Feature Engineering para obtener las columnas que el modelo requerirá. Las tablas corresponientes se cargan en RDS como se mencionó previamente. Cabe señalar que la clase de Luigi *FeatEngMetaTask* debe recibir como parámetros: 
 
     - nombre del bucket (en nuestro caso el default es: data-product-architecture-4) donde se desea guardar el archivo con los datos históricos en formato .pkl
-    - el tipo de ingestión que deberá ser *consecutive*
-    - la fecha de ejecución en formato 'YYYY-MM-DD'
+    - la fecha de ejecución en formato 'YYYY-MM-DD' (la cual indica el día de corte hasta donde se descargarán los datos)
+    - el tipo de ingestión deberá ser *historic*, para obtener la información desde Enero de 2010 y *consecutive* para obtener una actualización de los últimos 7 días incluyendo la fecha de corte.
 
-Nota: Análogo al caso anterior se pasa como parámetro el tipo de ingesta y fecha de ingesta para que la clase de Luigi *AlmTask* busque por nombre el archivo que corresponde a dicha fecha y tipo de ingesta (si lo encuentra se sube al bucket de s3 y si no lo crea llamando a la clase de Luigi *IngTask* para crear el archivo .pkl en tu local y posteriormente subirlo a s3)
+Una vez ejecutada esta instrucción, puedes abrir un browser y escribir *localhost:8082/* para ver el DAG con los tasks.
 
-A continuación un ejemplo de cómo corremos el task de almacenamiento desde la terminal:
+Como vesmo, para Luigi no es necesario correr los tasks previos de forma individual, sino que es posible correr directamente el task para generar los metadatos de Feature Engineering para que éste ejecute el task de Feature Engineering, el de los Metadatos asociados a la Limpieza y Procesamiento y así sucesivamente con los parámetros especificados. Lo anterior se debe a que en Luigi los pipelines se diseñan iniciando con la última tarea en ejecutarse, pues su diseño incluye obtener los elementos requeridos para ejecutar una tarea, si estos no han sido satisfechos entonces ejecutará antes las tareas que se requieren.
 
-```bash
-luigi --module ingesta_almacenamiento AlmTask --bucket-name data-product-architecture-4 --date-ing YYYY-MM-DD --type-ing consecutive
-```
+A continuación añadimos el listado con los nombres de las tareas que se pueden ejecutar:
 
-Para Luigi no es necesario correr los tasks de ingesta y almacenamiento de forma individual, sino que es posible correr directamente el task de almacenamiento para que Luigi ejecute el de ingesta primero con los parámetros de fecha y tipo de ingesta especificados. Lo anterior se debe a que en Luigi los pipelines se diseñan iniciando con la última tarea en ejecutarse, pues su diseño incluye obtener los elementos requeridos para ejecutar una tarea, si estos no han sido satisfechos entonces ejecutará antes las tareas que se requieren.
+* FeatEngMetaTask
+* FeatEngTask
+* PrepMetaTask
+* PrepTask
+* AlmMetaTask
+* AlmTask
+* IngMetaTask
+* IngTask
+
 
 #### 9. DAG con las tasks del Checkpoint 4 en verde
 
