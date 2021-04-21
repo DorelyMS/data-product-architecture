@@ -59,9 +59,9 @@ La frecuencia de la actualización del dataset [Chicago Food Inspections](https:
 
 El pipeline diseñado para el proyecto hasta el momento incluye las siguientes etapas:
 
-* **Extract**: Mediante una conexión programática vía API, descargamos los datos del sitio de [Chicago Food Inspections](https://data.cityofchicago.org/Health-Human-Services/Food-Inspections/4ijn-s7e5) cuya documentación puedes encontrar [aquí](https://dev.socrata.com/foundry/data.cityofchicago.org/4ijn-s7e5).
-* **Load**: Los datos se cargan a un bucket de S3 en AWS en formato .pkl.
-* **Transform**: Se aplican tareas de Cleaning & Preprocessing y Feature Engineering para obtener las columnas que el modelo requerirá. Las tablas corresponientes se cargan en RDS.
+* **Extract**: Mediante una conexión programática vía API, descargamos los datos (Task de Ingesta) del sitio de [Chicago Food Inspections](https://data.cityofchicago.org/Health-Human-Services/Food-Inspections/4ijn-s7e5) cuya documentación puedes encontrar [aquí](https://dev.socrata.com/foundry/data.cityofchicago.org/4ijn-s7e5).
+* **Load**: Los datos se cargan (Task de Almacenamiento) en un bucket de S3 en AWS en formato .pkl.
+* **Transform**: Se aplican tareas de Cleaning & Preprocessing y Feature Engineering para obtener las columnas que el modelo requerirá. Las tablas corresponientes así como los metadatos asociados a cada una de las tarea se cargan en RDS.
 
 ## 6. Requerimientos de Infraestructura
 
@@ -136,7 +136,7 @@ db:
 export PYTHONPATH=$PWD
 ```
 
-Dentro de src/utils/constants.py se guardaron las constantes de nuestro proyecto: PATH_CREDENCIALES, NOMBRE_BUCKET y ID_SOCRATA para referenciar la ruta del archivo **./conf/local/credentials.yaml**, colocar el nombre del BUCKET para conectarnos a S3 y guardar el ID de la API para la extracción de los datos con el objetivo de que se puedan editar si se quiere reproducir el proyecto.
+Dentro de **src/utils/constants.py** se guardaron las constantes de nuestro proyecto: PATH_CREDENCIALES, NOMBRE_BUCKET y ID_SOCRATA para referenciar la ruta del archivo **./conf/local/credentials.yaml**, colocar el nombre del BUCKET para conectarnos a S3 y guardar el ID de la API para la extracción de los datos con el objetivo de que se puedan editar si se quiere reproducir el proyecto.
 
 Para la creación de los tasks, se utilizó Luigi que es un Orquestador de pipelines que utiliza un DAG para administrar el orden de las tareas en el pipeline. Puedes consultar la documentación de Luigi [aquí](https://luigi.readthedocs.io/en/stable/index.html). Para habilitar su scheduler desde el browser de tu navegador debes abrir otra terminal, activar el pyenv y escribir el siguiente comando desde otra terminal:
 
@@ -152,17 +152,17 @@ luigid
 PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi FeatEngMetaTask --date-ing 2021-04-20 --type-ing consecutive```
 ```
 
-Dicho comando aplica todo el Pipeline con los metadatos asociados al Feature Engineering para obtener las columnas que el modelo requerirá. Las tablas corresponientes se cargan en RDS como se mencionó previamente. Cabe señalar que la clase de Luigi *FeatEngMetaTask* debe recibir como parámetros: 
+Dicho comando aplica todo el Pipeline hasta generar los metadatos asociados al Feature Engineering para obtener las columnas que el modelo requerirá. Las tablas corresponientes se cargan en RDS como se mencionó previamente. Cabe señalar que la clase de Luigi *FeatEngMetaTask* debe recibir como parámetros: 
 
     - nombre del bucket (en nuestro caso el default es: data-product-architecture-4) donde se desea guardar el archivo con los datos históricos en formato .pkl
-    - la fecha de ejecución en formato 'YYYY-MM-DD' (la cual indica el día de corte hasta donde se descargarán los datos)
-    - el tipo de ingestión deberá ser *historic*, para obtener la información desde Enero de 2010 y *consecutive* para obtener una actualización de los últimos 7 días incluyendo la fecha de corte.
+    - la fecha de ejecución en formato 'YYYY-MM-DD' (la cual indica el día de corte hasta donde se descargarán los datos, donde el default la fecha del día en que se ejecuta)
+    - el tipo de ingestión deberá ser *historic*, para obtener la información desde Enero de 2010 y *consecutive* (default) para obtener una actualización de los últimos 7 días incluyendo la fecha de corte.
 
 Una vez ejecutada esta instrucción, puedes abrir un browser y escribir *localhost:8082/* para ver el DAG con los tasks.
 
-Como vesmo, para Luigi no es necesario correr los tasks previos de forma individual, sino que es posible correr directamente el task para generar los metadatos de Feature Engineering para que éste ejecute el task de Feature Engineering, el de los Metadatos asociados a la Limpieza y Procesamiento y así sucesivamente con los parámetros especificados. Lo anterior se debe a que en Luigi los pipelines se diseñan iniciando con la última tarea en ejecutarse, pues su diseño incluye obtener los elementos requeridos para ejecutar una tarea, si estos no han sido satisfechos entonces ejecutará antes las tareas que se requieren.
+Como vemos, para Luigi no es necesario correr los tasks previos de forma individual, sino que es posible correr directamente el task para generar los metadatos de Feature Engineering para que éste ejecute el task de Feature Engineering, el de los Metadatos asociados a la Limpieza y Procesamiento y así sucesivamente con los parámetros especificados. Lo anterior se debe a que en Luigi los pipelines se diseñan iniciando con la última tarea en ejecutarse, pues su diseño incluye obtener los elementos requeridos para ejecutar una tarea, si estos no han sido satisfechos entonces ejecutará antes las tareas que se requieren.
 
-A continuación añadimos el listado con los nombres de las tareas que se pueden ejecutar:
+A continuación añadimos el listado con los nombres de las tareas que también se pueden ejecutar de forma individual:
 
 * FeatEngMetaTask
 * FeatEngTask
