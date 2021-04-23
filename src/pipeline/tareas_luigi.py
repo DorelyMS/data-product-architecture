@@ -348,6 +348,7 @@ class PrepTask(CopyToTable):
 			d = dict(self.columns)
 			for k in d: d[k] = None
 			d['city'] = 'chicago'
+			d['state'] = 'il'
 			d.update(p)
 			try:
 				d.pop('location')
