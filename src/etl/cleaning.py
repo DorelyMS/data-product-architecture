@@ -63,7 +63,7 @@ def c_date_transformation(col, df):
 
 # Homologa el valor de la variable
 def c_correct_chicago_in_state(df):
-    df['state'] = df['state'].replace(to_replace=["312chicago", "cchicago", "chchicago", "chcicago", \
+    df['city'] = df['city'].replace(to_replace=["312chicago", "cchicago", "chchicago", "chcicago", \
                                            "chicagochicago", "chicagohicago", "chicagoi", \
                                            "chicago."], value="chicago")
     return df
