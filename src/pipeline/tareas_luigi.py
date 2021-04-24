@@ -14,9 +14,17 @@ from src.utils.constants import NOMBRE_BUCKET, ID_SOCRATA, PATH_CREDENCIALES
 from src.etl.cleaning import cleaning
 from src.etl.feature_engineering import feature_engineering
 
+from src.utils.luigi_extras import PostgresQueryPickle
+
 import luigi
 import luigi.contrib.s3
 from luigi.contrib.postgres import CopyToTable, PostgresQuery
+
+
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import precision_score
+from sklearn.metrics import recall_score
 
 
 
@@ -96,7 +104,7 @@ class IngTask(luigi.Task):
 			results = client.get_all(self.socrata_id, where=soql_query)
 
 		else:
-			init_date = '1900-01-01'
+			init_date = '2020-01-01'
 			soql_query = "inspection_date between'{}' and '{}'".format(init_date, self.date_ing.strftime("%Y-%m-%d"))
 			results = client.get_all(self.socrata_id, where=soql_query)
 		
@@ -443,7 +451,7 @@ class FeatEngTask(CopyToTable):
 		("aka_name", "text"),
 		("license_num", "integer"),
 		("facility_type", "text"),
-		("risk", "integer"),
+		("risk", "numeric"),
 		("address", "text"),
 		("zip", "text"),
 		("inspection_date", "date"),
@@ -559,3 +567,193 @@ class FeatEngMetaTask(CopyToTable):
 		]
 		for element in r:
 			yield element
+
+
+class TrainTask(PostgresQueryPickle):
+	"""
+	Clase de Luigi que guarda los metadatos de FeatEngTask
+	"""
+
+	bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
+	type_ing = luigi.Parameter(default='consecutive')
+	date_ing = luigi.DateParameter(default=datetime.date.today())
+
+	fecha_ejecucion = datetime.datetime.today()
+
+	creds = general.get_db_credentials(PATH_CREDENCIALES)
+
+	user = creds['user']
+	password = creds['password']
+	database = creds['database']
+	host = creds['host']
+	port = creds['port']
+	table = 'models.entrenamiento'
+
+	columns = [
+	("fecha_ejecucion", "date"),
+	("nombre", "text"),
+	("modelo", "bytea"),
+	("precision_train", "numeric"),
+	("precision_test", "numeric"),
+	("recall_train", "numeric"),
+	("recall_test", "numeric")
+	]
+
+	def requires(self):
+		return FeatEngMetaTask(bucket_name=self.bucket_name,
+			type_ing=self.type_ing,
+			date_ing=self.date_ing)
+
+	# Carga
+	query = "select * from clean.feature_eng;"
+	conn = psycopg2.connect(dbname = database,
+		user = user,
+		host = host,
+		password = password)
+	df = pd.read_sql_query(query, con=conn)
+	conn.close()
+
+	# Modelado
+	var = ['risk', 'zip', 'days_since_last_inspection', 'approved_insp', 'num_viol_last_insp', 
+	'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun',
+	'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+	X_train, X_test, y_train, y_test = train_test_split(df[var], df['pass'].astype(int), random_state=4)
+	tree = DecisionTreeClassifier(random_state=0)
+	tree.fit(X_train, y_train)
+	y_pred_train = tree.predict(X_train)
+	y_pred_test = tree.predict(X_test)
+	p_train = precision_score(y_train.to_numpy(), y_pred_train)
+	p_test = precision_score(y_test.to_numpy(), y_pred_test)
+	r_train = recall_score(y_train.to_numpy(), y_pred_train)
+	r_test = recall_score(y_test.to_numpy(), y_pred_test)
+	modelo = pickle.dumps(tree)
+	nombre = 'modelo_'+fecha_ejecucion.strftime("%Y-%m-%d")
+
+	# Guarda
+	query = """
+	INSERT INTO models.entrenamiento (fecha_ejecucion, nombre, modelo, precision_train, precision_test, recall_train, recall_test)  
+	VALUES(TIMESTAMP %s, %s, %s, %s, %s, %s, %s)
+	"""
+
+	line = (fecha_ejecucion, nombre, modelo, p_train, p_test, r_train, r_test)
+
+
+class TrainMetaTask(CopyToTable):
+	"""
+	Clase de Luigi que guarda los metadatos de FeatEngTask
+	"""
+
+	bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
+	type_ing = luigi.Parameter(default='consecutive')
+	date_ing = luigi.DateParameter(default=datetime.date.today())
+
+	fecha_ejecucion = datetime.datetime.now()
+	tarea = "Training"
+
+	creds = general.get_db_credentials(PATH_CREDENCIALES)
+
+	user = creds['user']
+	password = creds['password']
+	database = creds['database']
+	host = creds['host']
+	port = creds['port']
+	table = 'meta.food_metadata'
+
+	columns = [
+	("fecha_ejecucion", "timestamp"),
+	("tarea", "text"),
+	("usuario", "text"),
+	("metadata", "jsonb")
+	]
+
+	def requires(self):
+		return TrainTask(bucket_name=self.bucket_name,
+			type_ing=self.type_ing,
+			date_ing=self.date_ing)
+
+	def rows(self):
+
+		metadata = {
+		'modelo': 'modelo_'+self.date_ing.strftime("%Y-%m-%d")
+		}
+
+		print("Feature Engineering metadata")
+		print(self.fecha_ejecucion)
+		print(self.tarea)
+		print(metadata)
+
+		r = [
+		(self.fecha_ejecucion, self.tarea, self.user, json.dumps(metadata))
+		]
+		for element in r:
+			yield element
+
+
+# class TrainTask(luigi.Task):
+	# """
+	# Clase de Luigi encargada de la ingesta (descarga) de la base de datos, ya sea:
+	# - historica (historic) que trae todos las inspecciones hasta la fecha de ingesta
+	# que se pase como parámetro
+	# - consecutiva (consecutive) obtiene todos las inspecciones de los 7 días anteriores a
+	# la fecha de ingesta
+	# Las bases se descargan en la carpeta /conf/base/ separadas por tipo de ingesta, año y mes
+	# """
+	# bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
+	# type_ing = luigi.Parameter(default='consecutive')
+	# date_ing = luigi.DateParameter(default=datetime.date.today())
+
+	# creds = general.get_db_credentials(PATH_CREDENCIALES)
+
+	# user = creds['user']
+	# password = creds['password']
+	# database = creds['database']
+	# host = creds['host']
+	# port = creds['port']
+	# table = 'models.entrenamiento'
+
+	# def requires(self):
+	# 	return FeatEngMetaTask(bucket_name=self.bucket_name,
+	# 		type_ing=self.type_ing,
+	# 		date_ing=self.date_ing)
+
+	# def run(self):
+
+	# 	#Carga
+	# 	query = "select * from clean.feature_eng;"
+	# 	conn = psycopg2.connect(dbname = self.database,
+	# 	user = self.user,
+	# 	host = self.host,
+	# 	password = self.password)
+	# 	df = pd.read_sql_query(query, con=conn)
+	# 	conn.close()
+
+	# 	# Modelado
+	# 	var = ['risk', 'zip', 'days_since_last_inspection', 'approved_insp', 'num_viol_last_insp', 
+	# 	'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun',
+	# 	'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+	# 	X_train, X_test, y_train, y_test = train_test_split(df[var], df['pass'].astype(int), random_state=4)
+	# 	tree = DecisionTreeClassifier(random_state=0)
+	# 	tree.fit(X_train, y_train)
+	# 	y_pred_train = tree.predict(X_train)
+	# 	y_pred_test = tree.predict(X_test)
+	# 	p_train = precision_score(y_train.to_numpy(), y_pred_train)
+	# 	p_test = precision_score(y_test.to_numpy(), y_pred_test)
+	# 	r_train = recall_score(y_train.to_numpy(), y_pred_train)
+	# 	r_test = recall_score(y_test.to_numpy(), y_pred_test)
+	# 	modelo = pickle.dumps(tree)
+		
+
+	# 	with self.output().open('w') as outfile:
+	# 		pickle.dump(modelo, outfile)
+
+	# def output(self):
+	# 	file_name = 'modelo' + str(self.date_ing) + '.pkl'
+
+	# 	output_path = 's3://' + self.bucket_name + '/modelos/' +  file_name
+
+	# 	s3_creds = general.get_s3_credentials(PATH_CREDENCIALES)
+	# 	client = luigi.contrib.s3.S3Client(
+	# 	aws_access_key_id=s3_creds['aws_access_key_id'],
+	# 	aws_secret_access_key=s3_creds['aws_secret_access_key'])
+
+	# 	return luigi.contrib.s3.S3Target(path=output_path, client=client, format=luigi.format.Nop)
