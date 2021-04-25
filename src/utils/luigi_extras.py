@@ -151,8 +151,11 @@ class PostgresQueryPickle(rdbms.Query):
         connection.autocommit = self.autocommit
         cursor = connection.cursor()
         sql = self.query
+        nombre_e = self.nombre + "_" + str(self.date_ing)
 
-        cursor.execute(sql, self.line)
+        line = (self.fecha_ejecucion, nombre_e, self.modelo, self.p_train, self.p_test, self.r_train, self.r_test)
+
+        cursor.execute(sql, line)
 
         # Update marker table
         self.output().touch(connection)
