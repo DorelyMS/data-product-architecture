@@ -199,6 +199,12 @@ class AlmTask(luigi.Task):
 	type_ing = luigi.Parameter(default='consecutive')
 	date_ing = luigi.DateParameter(default=datetime.date.today())
 
+	s3_creds = general.get_s3_credentials(PATH_CREDENCIALES)
+	client = luigi.contrib.s3.S3Client(
+	aws_access_key_id=s3_creds['aws_access_key_id'],
+	aws_secret_access_key=s3_creds['aws_secret_access_key'])
+
+
 	def requires(self):
 		return IngMetaTask(date_ing=self.date_ing, 
 			type_ing=self.type_ing,
@@ -215,12 +221,7 @@ class AlmTask(luigi.Task):
 		output_path = 's3://' + self.bucket_name + '/' + aux_path + file_name
 		local_path = './conf/base/' + aux_path + file_name
 
-		s3_creds = general.get_s3_credentials(PATH_CREDENCIALES)
-		client = luigi.contrib.s3.S3Client(
-		aws_access_key_id=s3_creds['aws_access_key_id'],
-		aws_secret_access_key=s3_creds['aws_secret_access_key'])
-
-		client.put(local_path, output_path)
+		self.client.put(local_path, output_path)
 
 		# with self.output()
 
@@ -234,12 +235,7 @@ class AlmTask(luigi.Task):
 
 		output_path = 's3://' + self.bucket_name + '/' + aux_path + file_name
 
-		s3_creds = general.get_s3_credentials(PATH_CREDENCIALES)
-		client = luigi.contrib.s3.S3Client(
-		aws_access_key_id=s3_creds['aws_access_key_id'],
-		aws_secret_access_key=s3_creds['aws_secret_access_key'])
-
-		return luigi.contrib.s3.S3Target(path=output_path, client=client, format=luigi.format.Nop)
+		return luigi.contrib.s3.S3Target(path=output_path, client=self.client, format=luigi.format.Nop)
 
 
 class AlmMetaTask(CopyToTable):
@@ -627,7 +623,7 @@ class TrainTask(PostgresQueryPickle):
 	r_train = recall_score(y_train.to_numpy(), y_pred_train)
 	r_test = recall_score(y_test.to_numpy(), y_pred_test)
 	modelo = pickle.dumps(tree)
-	nombre = 'modelo_'+fecha_ejecucion.strftime("%Y-%m-%d")
+	nombre = 'modelo'
 
 	# Guarda
 	query = """
@@ -688,6 +684,127 @@ class TrainMetaTask(CopyToTable):
 		for element in r:
 			yield element
 
+
+class SeleccionTask(luigi.Task):
+	"""
+	Clase de Luigi encargada de la guardar el modelo seleccionado
+	"""
+
+	# Parametros
+	bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
+	type_ing = luigi.Parameter(default='consecutive')
+	date_ing = luigi.DateParameter(default=datetime.date.today())
+
+	# Conexion S3
+	s3_creds = general.get_s3_credentials(PATH_CREDENCIALES)
+	client = luigi.contrib.s3.S3Client(
+	aws_access_key_id=s3_creds['aws_access_key_id'],
+	aws_secret_access_key=s3_creds['aws_secret_access_key'])
+
+	# Lectura RDS
+	creds = general.get_db_credentials(PATH_CREDENCIALES)
+	user = creds['user']
+	password = creds['password']
+	database = creds['database']
+	host = creds['host']
+	port = creds['port']
+	query = """
+	select nombre, modelo
+	from models.entrenamiento
+	order by precision_test desc, recall_test desc
+	limit 1
+	"""
+	conn = psycopg2.connect(dbname = database,
+	    user = user,
+	    host = host,
+	    password = password)
+	cur = conn.cursor()
+	cur.execute(query)
+	res = cur.fetchone()
+	cur.close()
+	conn.close()
+	name = res[0]
+	model = model = pickle.loads(res[1])
+
+	def requires(self):
+		return TrainMetaTask(bucket_name=self.bucket_name,
+			type_ing=self.type_ing,
+			date_ing=self.date_ing)
+
+	def run(self):
+
+		output_path = 's3://' + self.bucket_name + '/modelos/modelo_seleccionado/'
+		self.client.remove(output_path)
+
+		with self.output().open('w') as outfile:
+			pickle.dump(self.model, outfile)
+
+	def output(self):
+
+		file_name = self.name + "_" + str(self.date_ing) + '.pkl'
+		output_path = 's3://' + self.bucket_name + '/modelos/modelo_seleccionado/' +  file_name
+
+		return luigi.contrib.s3.S3Target(path=output_path, client=self.client, format=luigi.format.Nop)
+
+class SeleccionMetaTask(CopyToTable):
+	"""
+	Clase de Luigi que guarda los metadatos de FeatEngTask
+	"""
+
+	bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
+	type_ing = luigi.Parameter(default='consecutive')
+	date_ing = luigi.DateParameter(default=datetime.date.today())
+
+	fecha_ejecucion = datetime.datetime.now()
+	tarea = "Select"
+
+	# Conexion S3
+	s3_creds = general.get_s3_credentials(PATH_CREDENCIALES)
+	client = luigi.contrib.s3.S3Client(
+	aws_access_key_id=s3_creds['aws_access_key_id'],
+	aws_secret_access_key=s3_creds['aws_secret_access_key'])
+
+	creds = general.get_db_credentials(PATH_CREDENCIALES)
+
+	user = creds['user']
+	password = creds['password']
+	database = creds['database']
+	host = creds['host']
+	port = creds['port']
+	table = 'meta.food_metadata'
+
+	columns = [
+	("fecha_ejecucion", "timestamp"),
+	("tarea", "text"),
+	("usuario", "text"),
+	("metadata", "jsonb")
+	]
+
+	def requires(self):
+		return TrainTask(bucket_name=self.bucket_name,
+			type_ing=self.type_ing,
+			date_ing=self.date_ing)
+
+	def rows(self):
+
+		output_path = 's3://' + self.bucket_name + '/modelos/modelo_seleccionado/'
+		res = self.client.list(output_path)
+		modelo = next(res)
+
+		metadata = {
+		'modelo_elegido': modelo
+		}
+
+		print("Feature Engineering metadata")
+		print(self.fecha_ejecucion)
+		print(self.tarea)
+		print(metadata)
+
+		r = [
+		(self.fecha_ejecucion, self.tarea, self.user, json.dumps(metadata))
+		]
+		for element in r:
+			yield element
 
 # class TrainTask(luigi.Task):
 	# """
