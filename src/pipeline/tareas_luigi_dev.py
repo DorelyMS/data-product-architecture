@@ -120,10 +120,6 @@ class IngTask(luigi.Task):
         local_path = './conf/base/' + aux_path + file_name
         return luigi.local_target.LocalTarget(local_path, format=luigi.format.Nop)
 
-##############################################################################################################################################
-##############################################################################################################################################
-
-
 class TestIngTask(CopyToTable):
    """
    Clase de Luigi que genera test de Ingesta
@@ -165,7 +161,7 @@ class TestIngTask(CopyToTable):
        metadata = {'type_ing': self.type_ing,
                     'date_ing': self.date_ing.strftime("%Y-%m-%d"),
                     'date_inic': (self.date_ing - datetime.timedelta(days=6)).strftime("%Y-%m-%d"),
-                    'test_errors': 'no hubo errores'
+                    'test_results': 'pasó pruebas unitarias'
                     }
        print("Test Ingestion metadata")
        print(self.fecha_ejecucion)
@@ -175,10 +171,6 @@ class TestIngTask(CopyToTable):
        r = [(self.fecha_ejecucion, self.tarea, self.user, json.dumps(metadata))]
        for element in r:
            yield element
-
-
-##############################################################################################################################################
-##############################################################################################################################################
 
 class IngMetaTask(CopyToTable):
     """

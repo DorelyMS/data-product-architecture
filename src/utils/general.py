@@ -1,6 +1,6 @@
 import yaml
 
-def read_yaml(credentials_file): 
+def read_yaml(credentials_file):
 	"""
 	Funcion para leer archivo config
 	"""
@@ -35,3 +35,9 @@ def get_db_credentials(credentials_file):
 	cred = read_yaml(credentials_file)['db']
 
 	return cred
+
+def type_ing_aux(type_ingesta):
+	if type_ingesta == 'historic':
+		return 'initial'
+	else:
+		return 'consecutive'
