@@ -14,6 +14,7 @@ from src.utils.constants import NOMBRE_BUCKET, ID_SOCRATA, PATH_CREDENCIALES
 from src.etl.cleaning import cleaning
 from src.etl.feature_engineering import feature_engineering
 from src.pipeline.tests.test_ingestion import test_ingesta
+from src.pipeline.tests.test_almacenamiento import test_almacenamiento
 
 import luigi
 import luigi.contrib.s3
@@ -156,13 +157,13 @@ class TestIngTask(CopyToTable):
        if len(resultados.failures) >0:
            for failure in resultados.failures:
                print(failure)
-           raise Exception("Falló pruebas unitarias ingestión") #Raise an error and stop the program if len(failures) is greater than 0
+           raise Exception("Falló pruebas unitarias ingestión") #Si cacha un error, detiene la ejecución cuando len(failures)>0
 
        metadata = {'type_ing': self.type_ing,
-                    'date_ing': self.date_ing.strftime("%Y-%m-%d"),
-                    'date_inic': (self.date_ing - datetime.timedelta(days=6)).strftime("%Y-%m-%d"),
-                    'test_results': 'pasó pruebas unitarias'
-                    }
+                   'date_ing': self.date_ing.strftime("%Y-%m-%d"),
+                   'date_inic': (self.date_ing - datetime.timedelta(days=6)).strftime("%Y-%m-%d"),
+                   'test_results': 'pasó pruebas unitarias'
+                   }
        print("Test Ingestion metadata")
        print(self.fecha_ejecucion)
        print(self.tarea)
@@ -171,6 +172,8 @@ class TestIngTask(CopyToTable):
        r = [(self.fecha_ejecucion, self.tarea, self.user, json.dumps(metadata))]
        for element in r:
            yield element
+
+
 
 class IngMetaTask(CopyToTable):
     """
@@ -252,14 +255,7 @@ class AlmTask(luigi.Task):
 
     def run(self):
         file_name = str(self.type_ing) + '-inspections-' + str(self.date_ing) + '.pkl'
-
-        if self.type_ing == 'consecutive':
-            aux_path = 'ingestion/' + str(self.type_ing) + '/YEAR-' + str(self.date_ing)[0:4] + '/MONTH-' + str(
-                self.date_ing)[5:7] + '/'
-        else:
-            aux_path = 'ingestion/' + 'initial' + '/YEAR-' + str(self.date_ing)[0:4] + '/MONTH-' + str(self.date_ing)[
-                                                                                                   5:7] + '/'
-
+        aux_path = 'ingestion/' + general.type_ing_aux(str(self.type_ing)) + '/YEAR-' + str(self.date_ing)[0:4] + '/MONTH-' + str(self.date_ing)[5:7] + '/'
         output_path = 's3://' + self.bucket_name + '/' + aux_path + file_name
         local_path = './conf/base/' + aux_path + file_name
 
@@ -291,6 +287,129 @@ class AlmTask(luigi.Task):
 
         return luigi.contrib.s3.S3Target(path=output_path, client=client, format=luigi.format.Nop)
 
+##########################################################################################################################################
+##########################################################################################################################################
+
+
+class TestAlmTask(CopyToTable):
+   """
+   Clase de Luigi que genera test de Almacenamiento
+   """
+
+   fecha_ejecucion = datetime.datetime.now()
+   tarea = "Test_Almacenamiento"
+   bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
+   type_ing = luigi.Parameter(default='consecutive')
+   date_ing = luigi.DateParameter(default=datetime.date.today())
+
+   creds = general.get_db_credentials(PATH_CREDENCIALES)
+
+   user = creds['user']
+   password = creds['password']
+   database = creds['database']
+   host = creds['host']
+   port = creds['port']
+   table = 'meta.food_metadata'
+
+   columns = [
+      ("fecha_ejecucion", "timestamp"),
+      ("tarea", "text"),
+      ("usuario", "text"),
+      ("metadata", "jsonb")
+   ]
+
+   def requires(self):
+      return AlmTask(date_ing=self.date_ing,
+                     type_ing=self.type_ing,
+                     bucket_name=self.bucket_name)
+
+   def rows(self):
+       pruebas=test_almacenamiento(date_ing=self.date_ing, type_ing=self.type_ing,bucket_name=self.bucket_name)
+       resultados=pruebas()
+       if len(resultados.failures) >0:
+           for failure in resultados.failures:
+               print(failure)
+           raise Exception("Falló pruebas unitarias almacenamiento") #Raise an error and stop the program if len(failures) is greater than 0
+
+       metadata = {'type_ing': self.type_ing,
+                    'date_ing': self.date_ing.strftime("%Y-%m-%d"),
+                    'date_inic': (self.date_ing - datetime.timedelta(days=6)).strftime("%Y-%m-%d"),
+                    'test_results': 'pasó pruebas unitarias'
+                    }
+       print("Test Almacenamiento metadata")
+       print(self.fecha_ejecucion)
+       print(self.tarea)
+       print(metadata)
+
+       r = [(self.fecha_ejecucion, self.tarea, self.user, json.dumps(metadata))]
+       for element in r:
+           yield element
+
+class IngMetaTask(CopyToTable):
+    """
+    Clase de Luigi que guarda los metadatos de Ingesta
+    """
+
+    fecha_ejecucion = datetime.datetime.now()
+    tarea = "Ingestion"
+    bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
+    type_ing = luigi.Parameter(default='consecutive')
+    date_ing = luigi.DateParameter(default=datetime.date.today())
+
+    creds = general.get_db_credentials(PATH_CREDENCIALES)
+
+    user = creds['user']
+    password = creds['password']
+    database = creds['database']
+    host = creds['host']
+    port = creds['port']
+    table = 'meta.food_metadata'
+
+    columns = [
+        ("fecha_ejecucion", "timestamp"),
+        ("tarea", "text"),
+        ("usuario", "text"),
+        ("metadata", "jsonb")
+    ]
+
+    def requires(self):
+        return TestIngTask(date_ing=self.date_ing, type_ing=self.type_ing)
+
+    def rows(self):
+
+        file_name = str(self.type_ing) + '-inspections-' + str(self.date_ing) + '.pkl'
+        if self.type_ing == 'consecutive':
+            aux_path = 'ingestion/' + str(self.type_ing) + '/YEAR-' + str(self.date_ing)[0:4] + '/MONTH-' + str(
+                self.date_ing)[5:7] + '/'
+        else:
+            aux_path = 'ingestion/' + 'initial' + '/YEAR-' + str(self.date_ing)[0:4] + '/MONTH-' + str(self.date_ing)[
+                                                                                                   5:7] + '/'
+        local_path = './conf/base/' + aux_path + file_name
+        with open(local_path, 'rb') as p:
+            file = pickle.load(p)
+
+        metadata = {
+            'type_ing': self.type_ing,
+            'date_ing': self.date_ing.strftime("%Y-%m-%d"),
+            'date_inic': (self.date_ing - datetime.timedelta(days=6)).strftime("%Y-%m-%d"),
+            'num_registros': len(file),
+            'variables': list(file[0].keys())
+        }
+
+        print("Ingestion metadata")
+        print(self.fecha_ejecucion)
+        print(self.tarea)
+        print(metadata)
+
+        r = [
+            (self.fecha_ejecucion, self.tarea, self.user, json.dumps(metadata))
+        ]
+        for element in r:
+            yield element
+
+
+##########################################################################################################################################
+##########################################################################################################################################
 
 class AlmMetaTask(CopyToTable):
     """
