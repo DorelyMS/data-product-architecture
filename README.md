@@ -149,7 +149,7 @@ luigid
 * Para la ejecución de nuestro pipeline hasta el momento, debemos ejecutar el siquiente comando:
  
 ```bash
-PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi FeatEngMetaTask --date-ing 2021-04-20 --type-ing consecutive```
+PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi FeatEngMetaTask --date-ing 2021-04-20 --type-ing consecutive
 ```
 
 Dicho comando aplica todo el Pipeline hasta generar los metadatos asociados al Feature Engineering para obtener las columnas que el modelo requerirá. Las tablas corresponientes se cargan en RDS como se mencionó previamente. Cabe señalar que la clase de Luigi *FeatEngMetaTask* debe recibir como parámetros: 
