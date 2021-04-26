@@ -1,6 +1,6 @@
 import yaml
 
-def read_yaml(credentials_file): 
+def read_yaml(credentials_file):
 	"""
 	Funcion para leer archivo config
 	"""

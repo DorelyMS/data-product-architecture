@@ -8,7 +8,7 @@ import src.utils.general as general
 
 class test_ingesta(marbles.core.TestCase):
     """
-    Clase con pruebas de Task Ingesta Metadata usando marbles:
+    Clase con pruebas de Task Ingesta usando marbles:
     1.- Probar que el pickle tiene las 17 columnas
     """
 
@@ -20,7 +20,7 @@ class test_ingesta(marbles.core.TestCase):
     def test_num_columnas(self):
         file_name = str(self.type_ing) + '-inspections-' + str(self.date_ing) + '.pkl'
         aux_path = 'ingestion/' + general.type_ing_aux(str(self.type_ing)) + '/YEAR-' + str(self.date_ing)[0:4] + '/MONTH-' + str(self.date_ing)[5:7] + '/'
-        local_path = './../../../conf/base/' + aux_path + file_name
+        local_path = './conf/base/' + aux_path + file_name
 
         try:
             infile = open(local_path, 'rb')
@@ -36,14 +36,5 @@ class test_ingesta(marbles.core.TestCase):
     def runTest(self):
         self.test_num_columnas()
 
-def main():
-    clase=test_ingesta('consecutive','2015-01-01')
-    results=clase()
-    print(len(results.failures))
-
-if __name__ == "__main__":
-    main()
 
 
-# python test_ingestion.py
-# python -m marbles test_ingestion.py
