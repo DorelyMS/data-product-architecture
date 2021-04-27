@@ -9,7 +9,9 @@ from luigi.contrib import rdbms
 import psycopg2
 import psycopg2.errorcodes
 import psycopg2.extensions
+from psycopg2.extras import execute_values
 
+import src.utils.train as train
 
 class PostgresTarget(luigi.Target):
     """
@@ -151,13 +153,20 @@ class PostgresQueryPickle(rdbms.Query):
         connection.autocommit = self.autocommit
         cursor = connection.cursor()
         sql = self.query
-        nombre_e = self.nombre + "_" + str(self.date_ing)
+        #nombre_e = self.nombre + "_" + str(self.date_ing)
 
-        line = (self.fecha_ejecucion, nombre_e, self.modelo, self.p_train, self.p_test, self.r_train, self.r_test)
+        #line = (self.fecha_ejecucion, nombre_e, self.modelo, self.p_train, self.p_test, self.r_train, self.r_test)
+        X_train, X_test = train.split_tiempo(self.df, 'inspection_date', '2021-04-01')
+        X = X_train.drop(['aka_name', 'facility_type', 'address', 'inspection_date', 'inspection_type', 'violations', 'results', 'pass'], axis=1)
+        y = X_train['pass'].astype(int)
+        line = train.magic_loop(X, y, ['params', 'mean_test_score', 'rank_test_score'], self.date_ing)
+        #line = self.results
+        print(line[0])
 
-        cursor.execute(sql, line)
+        #cursor.execute(sql, line)
 
         # Update marker table
+        execute_values(cursor, sql, line)
         self.output().touch(connection)
 
         # commit and close connection
