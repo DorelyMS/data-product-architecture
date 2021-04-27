@@ -23,9 +23,9 @@ def magic_loop(X_train,y_train, cols, date_ing):
     classifier = RandomForestClassifier()
     hyper_param_grid= {'n_estimators': [100,500,800], 
                     'max_depth': [1,5,10,50], 
-#                     'max_features': ['sqrt','log2'],
-#                     'min_samples_split': [2,5,10],
-                       'min_samples_leaf':[1,2,4]}
+                    'max_features': ['sqrt','log2'],
+                    'min_samples_split': [2,5,10],
+                    'min_samples_leaf':[1,2,4]}
     grid_search1 = GridSearchCV(classifier, 
                            hyper_param_grid, 
                            scoring = 'f1',
