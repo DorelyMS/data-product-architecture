@@ -10,6 +10,7 @@ import socket
 import pickle
 from sodapy import Socrata
 import src.utils.general as general
+import src.utils.train as train
 from src.utils.constants import NOMBRE_BUCKET, ID_SOCRATA, PATH_CREDENCIALES
 from src.etl.cleaning import cleaning
 from src.etl.feature_engineering import feature_engineering
@@ -20,12 +21,8 @@ import luigi
 import luigi.contrib.s3
 from luigi.contrib.postgres import CopyToTable, PostgresQuery
 
-
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import precision_score
-from sklearn.metrics import recall_score
-
 
 
 def get_client(cred_path=PATH_CREDENCIALES):
@@ -588,11 +585,10 @@ class TrainTask(PostgresQueryPickle):
 	columns = [
 	("fecha_ejecucion", "date"),
 	("nombre", "text"),
-	("modelo", "bytea"),
-	("precision_train", "numeric"),
-	("precision_test", "numeric"),
-	("recall_train", "numeric"),
-	("recall_test", "numeric")
+	("hiperparametros", "jsonb"),
+	("score", "numeric"),
+	("rank", "integer"),
+	("modelo", "bytea")
 	]
 
 	def requires(self):
@@ -601,37 +597,20 @@ class TrainTask(PostgresQueryPickle):
 			date_ing=self.date_ing)
 
 	# Carga
-	query = "select * from clean.feature_eng;"
+	query = "select * from clean.feature_eng where inspection_date >= '2020-11-01';"
 	conn = psycopg2.connect(dbname = database,
 		user = user,
 		host = host,
 		password = password)
-	df = pd.read_sql_query(query, con=conn)
+	df = pd.read_sql_query(query, con=conn, parse_dates=['inspection_date'])
 	conn.close()
-
-	# Modelado
-	var = ['risk', 'zip', 'days_since_last_inspection', 'approved_insp', 'num_viol_last_insp', 
-	'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun',
-	'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
-	X_train, X_test, y_train, y_test = train_test_split(df[var], df['pass'].astype(int), random_state=4)
-	tree = DecisionTreeClassifier(random_state=0)
-	tree.fit(X_train, y_train)
-	y_pred_train = tree.predict(X_train)
-	y_pred_test = tree.predict(X_test)
-	p_train = precision_score(y_train.to_numpy(), y_pred_train)
-	p_test = precision_score(y_test.to_numpy(), y_pred_test)
-	r_train = recall_score(y_train.to_numpy(), y_pred_train)
-	r_test = recall_score(y_test.to_numpy(), y_pred_test)
-	modelo = pickle.dumps(tree)
-	nombre = 'modelo'
 
 	# Guarda
 	query = """
-	INSERT INTO models.entrenamiento (fecha_ejecucion, nombre, modelo, precision_train, precision_test, recall_train, recall_test)  
-	VALUES(TIMESTAMP %s, %s, %s, %s, %s, %s, %s)
+	INSERT INTO models.entrenamiento (fecha_ejecucion, date_ing, registros, nombre, hiperparametros, score, rank, modelo)  
+	VALUES %s
 	"""
 
-	line = (fecha_ejecucion, nombre, modelo, p_train, p_test, r_train, r_test)
 
 
 class TrainMetaTask(CopyToTable):
@@ -708,23 +687,25 @@ class SeleccionTask(luigi.Task):
 	database = creds['database']
 	host = creds['host']
 	port = creds['port']
+
+	query = "select * from clean.feature_eng where inspection_date >= '2020-11-01';"
+	conn = psycopg2.connect(dbname = database,
+		user = user,
+		host = host,
+		password = password)
+	df = pd.read_sql_query(query, con=conn, parse_dates=['inspection_date'])
+	cur = conn.cursor()
 	query = """
-	select nombre, modelo
-	from models.entrenamiento
-	order by precision_test desc, recall_test desc
+	select nombre, hiperparametros from models.entrenamiento 
+	order by score desc, fecha_ejecucion desc 
 	limit 1
 	"""
-	conn = psycopg2.connect(dbname = database,
-	    user = user,
-	    host = host,
-	    password = password)
-	cur = conn.cursor()
 	cur.execute(query)
 	res = cur.fetchone()
 	cur.close()
 	conn.close()
 	name = res[0]
-	model = model = pickle.loads(res[1])
+	hiperparametros = res[1]
 
 	def requires(self):
 		return TrainMetaTask(bucket_name=self.bucket_name,
@@ -732,12 +713,19 @@ class SeleccionTask(luigi.Task):
 			date_ing=self.date_ing)
 
 	def run(self):
+		X_train, X_test = train.split_tiempo(self.df, 'inspection_date', '2021-04-01')
+		X = X_train.drop(['aka_name', 'facility_type', 'address', 'inspection_date', 'inspection_type', 'violations', 'results', 'pass'], axis=1)
+		y = X_train['pass'].astype(int)
+		rfc = RandomForestClassifier(**self.hiperparametros)
+		rfc.fit(X, y)
+
+		model = pickle.dumps(rfc)
 
 		output_path = 's3://' + self.bucket_name + '/modelos/modelo_seleccionado/'
 		self.client.remove(output_path)
 
 		with self.output().open('w') as outfile:
-			pickle.dump(self.model, outfile)
+			pickle.dump(model, outfile)
 
 	def output(self):
 
@@ -781,7 +769,7 @@ class SeleccionMetaTask(CopyToTable):
 	]
 
 	def requires(self):
-		return TrainTask(bucket_name=self.bucket_name,
+		return SeleccionTask(bucket_name=self.bucket_name,
 			type_ing=self.type_ing,
 			date_ing=self.date_ing)
 
@@ -791,8 +779,35 @@ class SeleccionMetaTask(CopyToTable):
 		res = self.client.list(output_path)
 		modelo = next(res)
 
+		# Lectura RDS
+		creds = general.get_db_credentials(PATH_CREDENCIALES)
+		user = creds['user']
+		password = creds['password']
+		database = creds['database']
+		host = creds['host']
+		port = creds['port']
+
+		query = """
+		select hiperparametros
+		from models.entrenamiento
+		order by score desc, fecha_ejecucion desc
+		limit 1
+		"""
+		conn = psycopg2.connect(dbname = database,
+		    user = user,
+		    host = host,
+		    password = password)
+		df = pd.read_sql_query(query, con=conn, parse_dates=['inspection_date'])
+		cur = conn.cursor()
+		cur.execute(query)
+		res = cur.fetchone()
+		cur.close()
+		conn.close()
+		hiperparametros = res[0]
+
 		metadata = {
-		'modelo_elegido': modelo
+		'modelo_elegido': modelo,
+		'hiperparametros': hiperparametros
 		}
 
 		print("Feature Engineering metadata")

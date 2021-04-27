@@ -4,10 +4,11 @@ drop table if exists models.entrenamiento;
 
 create table models.entrenamiento (
 	"fecha_ejecucion"  date,
+	"date_ing"  date,
+	"registros" integer,
 	"nombre" text,
-	"modelo" bytea,
-	"precision_train" numeric,
-	"precision_test" numeric,
-	"recall_train" numeric,
-	"recall_test" numeric
+	"hiperparametros" jsonb,
+	"score" numeric,
+	"rank" integer,
+	"modelo" bytea
  );
