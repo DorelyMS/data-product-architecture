@@ -1086,7 +1086,7 @@ class TestTrainTask(CopyToTable):
             # Detenemos la ejecución del task dado que no se pasó todos
             # los unittest contenidos en 'test_almacenamiento'
             # por el Task que almacena los metadatos no se ejecutará
-            raise Exception("Falló pruebas unitarias training")
+            raise Exception("Falló pruebas unitarias preprocessing and cleaning")
 
         # Si no hubo errores se procede a subir la info de este Task de unittest a RDS
         metadata = {'type_ing': self.type_ing,
@@ -1225,135 +1225,97 @@ class SeleccionTask(luigi.Task):
         return luigi.contrib.s3.S3Target(path=output_path, client=self.client, format=luigi.format.Nop)
 
 
-# class TestSeleccionTask(CopyToTable):
-#     """
-#     Clase de Luigi que genera test de Almacenamiento
-#     """
-#
-#     fecha_ejecucion = datetime.datetime.now()
-#     tarea = "Test_Almacenamiento"
-#     bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
-#     type_ing = luigi.Parameter(default='consecutive')
-#     date_ing = luigi.DateParameter(default=datetime.date.today())
-#
-#     creds = general.get_db_credentials(PATH_CREDENCIALES)
-#     # Parametros requeridos por la task de luigi para subir
-#     # los registros del método rows a RDS
-#     user = creds['user']
-#     password = creds['password']
-#     database = creds['database']
-#     host = creds['host']
-#     port = creds['port']
-#     table = 'meta.food_metadata'
-#     columns = [
-#       ("fecha_ejecucion", "timestamp"),
-#       ("tarea", "text"),
-#       ("usuario", "text"),
-#       ("metadata", "jsonb")
-#     ]
-#
-#     def requires(self):
-#         return SeleccionTask(date_ing=self.date_ing,
-#                      type_ing=self.type_ing,
-#                      bucket_name=self.bucket_name)
-#
-#     def rows(self):
-#         # Se comienza por checar la existencia y lectura de la base en s3
-#         s3_creds = general.get_s3_credentials('./conf/local/credentials.yaml')
-#         session = boto3.session.Session(region_name='us-west-2')
-#         s3client = session.client('s3', config=boto3.session.Config(signature_version='s3v4'),
-#                                  aws_access_key_id=s3_creds['aws_access_key_id'],
-#                                  aws_secret_access_key=s3_creds['aws_secret_access_key'])
-#
-#         # definimos nombres y paths apropiados
-#         # file_name = str(self.type_ing) + '-inspections-' + str(self.date_ing) + '.pkl'
-#         file_name= 'modelo_20210208_1_2021-02-08.pkl'
-#         # aux_path = 'ingestion/' + general.type_ing_aux(str(self.type_ing)) + '/YEAR-' + str(self.date_ing)[0:4] + '/MONTH-' + str(self.date_ing)[5:7] + '/'
-#         aux_path = '/modelos/modelo_seleccionado/'
-#
-#
-#         # A diferencia de otros Task, aquí no obtendremos local_path ni output_path,
-#         # sino un path conveniente para la función que usamos para leer de s3
-#         # (ligeramente diferente)
-#         path_s3 = aux_path + file_name
-#
-#         try:
-#             # Usamos 'try' porque "tratamos" de leer el pkl de s3,
-#             # si no existe provocará error y se ejecutará lo que está en 'except'
-#             response = s3client.get_object(Bucket=self.bucket_name, Key=path_s3)
-#             body_string = response['Body'].read()
-#             data = pickle.loads(body_string)
-#             # Columnas de la base que el task AlmTask sube a s3
-#             columns = [("inspection_id", "integer"),
-#                       ("dba_name", "text"),
-#                       ("aka_name", "text"),
-#                       ("license_", "integer"),
-#                       ("facility_type", "text"),
-#                       ("risk", "integer"),
-#                       ("address", "text"),
-#                       ("zip", "integer"),
-#                       ("inspection_date", "date"),
-#                       ("inspection_type", "text"),
-#                       ("results", "text"),
-#                       ("violations", "text"),
-#                       ("latitude", "double precision"),
-#                       ("longitude", "double precision"),
-#                       ("city", "text"),
-#                       ("state", "text"),
-#                       ("location", "double precision")
-#                       ]
-#             # Reacomodamos la lista "columns" para obtener la 1era "columna" que contiene
-#             # las variables y con ello inicializar un dataframe que llenaremos con los
-#             # renglones que se vayan obteniendo del pkl
-#             df = pd.DataFrame(columns=list(zip(*columns))[0])
-#             # Creamos un diccionario a partir de la lista "columns"
-#             d = dict(columns)
-#             for p in data:
-#                 # Actualizamos la info del diccionario (la "columna" derecha
-#                 # para que en lugar de contener los tipos de variables
-#                 # contenga los valores asociados a cada renglón de la base)
-#                 d.update(p)
-#                 # Construimos el dataframe renglón por renglón
-#                 df = df.append(d, ignore_index=True)
-#
-#         except:
-#             print("No existe el archivo de S3:", self.bucket_name + '/' + path_s3)
-#             # Como no existe el archivo detenemos la ejecución de este task
-#             # por lo que el Task que almacena los metadatos de Almacenamiento no se ejecutará
-#             # Este error no se alcanzará si se ejecuta correctamente el DAG compuesto
-#             # por los diferentes Task, pues primeramente se checa la existencia de este archivo
-#             # en "def requires(self):", y si no existe lo crea
-#             raise Exception()
-#
-#         # Inicializamos una clase que contiene las pruebas que queremos
-#         # y ejecutamos su método runTest para que ejecute todas las pruebas
-#         # allí contenidas. Haciendo esto también aseguramos que se define el
-#         # atributo failures, el cual contiene el numero de errores encontrados
-#         # (si es cero entonces se pasaron todas las pruebas)
-#         pruebas=test_alm(df=df)
-#         resultados=pruebas()
-#         if len(resultados.failures) >0:
-#             for failure in resultados.failures:
-#                 print(failure)
-#             # Detenemos la ejecución del task dado que no se pasó todos
-#             # los unittest contenidos en 'test_almacenamiento'
-#             # por el Task que almacena los metadatos no se ejecutará
-#             raise Exception("Falló pruebas unitarias almacenamiento")
-#
-#         # Si no hubo errores se procede a subir la info de este Task de unittest a RDS
-#         metadata = {'type_ing': self.type_ing,
-#                     'date_ing': self.date_ing.strftime("%Y-%m-%d"),
-#                     'date_inic': (self.date_ing - datetime.timedelta(days=6)).strftime("%Y-%m-%d"),
-#                     'test_results': 'No error unittest: ' + ','.join([i for i in dir(test_alm) if i.startswith('test_')])
-#                     }
-#         print("Test Almacenamiento metadata")
-#         print(self.fecha_ejecucion)
-#         print(self.tarea)
-#         print(metadata)
-#
-#         r = [(self.fecha_ejecucion, self.tarea, self.user, json.dumps(metadata))]
-#         for element in r:
-#             yield element
+class TestSeleccionTask(CopyToTable):
+    """
+    Clase de Luigi que genera test de Almacenamiento
+    """
+
+    fecha_ejecucion = datetime.datetime.now()
+    tarea = "Test_Almacenamiento"
+    bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
+    type_ing = luigi.Parameter(default='consecutive')
+    date_ing = luigi.DateParameter(default=datetime.date.today())
+
+    creds = general.get_db_credentials(PATH_CREDENCIALES)
+    # Parametros requeridos por la task de luigi para subir
+    # los registros del método rows a RDS
+    user = creds['user']
+    password = creds['password']
+    database = creds['database']
+    host = creds['host']
+    port = creds['port']
+    table = 'meta.food_metadata'
+    columns = [
+      ("fecha_ejecucion", "timestamp"),
+      ("tarea", "text"),
+      ("usuario", "text"),
+      ("metadata", "jsonb")
+    ]
+
+    def requires(self):
+        return SeleccionTask(date_ing=self.date_ing,
+                     type_ing=self.type_ing,
+                     bucket_name=self.bucket_name)
+
+    def rows(self):
+        # Se comienza por checar la existencia y lectura de la base en s3
+        s3_creds = general.get_s3_credentials('./conf/local/credentials.yaml')
+        session = boto3.session.Session(region_name='us-west-2')
+        s3client = session.client('s3', config=boto3.session.Config(signature_version='s3v4'),
+                                 aws_access_key_id=s3_creds['aws_access_key_id'],
+                                 aws_secret_access_key=s3_creds['aws_secret_access_key'])
+
+        # definimos nombres y paths apropiados
+        file_name= "modelo_" + str(self.date_ing) + '.pkl'
+        aux_path = 'modelos/modelo_seleccionado/'
+        # A diferencia de otros Task, aquí no obtendremos local_path ni output_path,
+        # sino un path conveniente para la función que usamos para leer de s3
+        # (ligeramente diferente)
+        path_s3 = aux_path + file_name
+        response = s3client.get_object(Bucket=self.bucket_name, Key=path_s3)
+        try:
+            # Usamos 'try' porque "tratamos" de leer el pkl de s3,
+            # si no existe provocará error y se ejecutará lo que está en 'except'
+            response = s3client.get_object(Bucket=self.bucket_name, Key=path_s3)
+            body_string = response['Body'].read()
+            model = pickle.loads(body_string)
+            model = pickle.loads(model)
+            # Aquí le preguntamos si tenemos un árbol de decisión como modelo
+            type_model = str(model.base_estimator_).replace("()","")
+
+        except:
+            print("No existe el archivo de S3:", self.bucket_name + '/' + path_s3)
+            raise Exception()
+
+        # Inicializamos una clase que contiene las pruebas que queremos
+        # y ejecutamos su método runTest para que ejecute todas las pruebas
+        # allí contenidas. Haciendo esto también aseguramos que se define el
+        # atributo failures, el cual contiene el numero de errores encontrados
+        # (si es cero entonces se pasaron todas las pruebas)
+        pruebas=test_seleccion(type_model=type_model)
+        resultados=pruebas()
+        if len(resultados.failures) >0:
+            for failure in resultados.failures:
+                print(failure)
+            # Detenemos la ejecución del task dado que no se pasó todos
+            # los unittest contenidos en 'test_almacenamiento'
+            # por el Task que almacena los metadatos no se ejecutará
+            raise Exception("Falló pruebas unitarias en seleccion modelo")
+
+        # Si no hubo errores se procede a subir la info de este Task de unittest a RDS
+        metadata = {'type_ing': self.type_ing,
+                    'date_ing': self.date_ing.strftime("%Y-%m-%d"),
+                    'date_inic': (self.date_ing - datetime.timedelta(days=6)).strftime("%Y-%m-%d"),
+                    'test_results': 'No hubo errores'
+                    }
+        print("Test Seleccion metadata")
+        print(self.fecha_ejecucion)
+        print(self.tarea)
+        print(metadata)
+
+        r = [(self.fecha_ejecucion, self.tarea, self.user, json.dumps(metadata))]
+        for element in r:
+            yield element
 
 
 class SeleccionMetaTask(CopyToTable):
@@ -1391,7 +1353,8 @@ class SeleccionMetaTask(CopyToTable):
     ]
 
     def requires(self):
-        return SeleccionTask(bucket_name=self.bucket_name,
+        # return SeleccionTask(bucket_name=self.bucket_name,
+        return TestSeleccionTask(bucket_name=self.bucket_name,
                              type_ing=self.type_ing,
                              date_ing=self.date_ing)
 
@@ -1440,10 +1403,3 @@ class SeleccionMetaTask(CopyToTable):
         ]
         for element in r:
             yield element
-
-
-
-
-# PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi_dev FeatEngMetaTask --date-ing 2014-01-04 --type-ing consecutive
-# python test_ingestion.py
-# python -m marbles test_ingestion.py
