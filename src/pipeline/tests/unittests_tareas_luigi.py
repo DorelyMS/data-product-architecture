@@ -60,7 +60,7 @@ class test_prep(marbles.core.TestCase):
 
 class test_feateng(marbles.core.TestCase):
     """
-        Clase con pruebas de Task Almacenamiento usando marbles:
+        Clase con pruebas de Task Feature Enginnering usando marbles:
         1.- Probar que el pickle tiene las 38 columnas
         2.- Probar que el pickle tiene cuando menos un registro
     """
@@ -83,7 +83,7 @@ class test_feateng(marbles.core.TestCase):
 
 class test_train(marbles.core.TestCase):
     """
-        Clase con pruebas de Task Almacenamiento usando marbles:
+        Clase con pruebas de Task Trainning usando marbles:
         1.- Probar que el pickle tiene las 8 columnas
         2.- Probar que el pickle tiene cuando menos un registro
     """
@@ -93,10 +93,10 @@ class test_train(marbles.core.TestCase):
         self.df = df
 
     def test_num_columns(self):
-        self.assertEqual(self.df.shape[1], 8, note="El número de columnas de la base de Train (RDS) debe ser 8")
+        self.assertEqual(self.df.shape[1], 8, note="El número de columnas de la base de Trainning (RDS) debe ser 8")
 
     def test_base_no_vacia(self):
-        self.assertNotEqual(self.df.shape[0], 0, note="El número de renglones de la base de Train (RDS) es cero (está vacía)")
+        self.assertNotEqual(self.df.shape[0], 0, note="El número de renglones de la base de Trainning (RDS) es cero (está vacía)")
 
     def runTest(self):
         self.test_num_columns()
