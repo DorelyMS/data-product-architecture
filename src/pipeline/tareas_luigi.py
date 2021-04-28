@@ -1186,16 +1186,15 @@ class SeleccionTask(luigi.Task):
     df = pd.read_sql_query(query, con=conn, parse_dates=['inspection_date'])
     cur = conn.cursor()
     query = """
-	select nombre, hiperparametros from models.entrenamiento 
-	order by score desc, fecha_ejecucion desc 
+	select hiperparametros from models.entrenamiento 
+	order by fecha_ejecucion desc, score desc
 	limit 1
 	"""
     cur.execute(query)
     res = cur.fetchone()
     cur.close()
     conn.close()
-    name = res[0]
-    hiperparametros = res[1]
+    hiperparametros = res[0]
 
     def requires(self):
         return TrainMetaTask(bucket_name=self.bucket_name,
@@ -1220,7 +1219,7 @@ class SeleccionTask(luigi.Task):
             pickle.dump(model, outfile)
 
     def output(self):
-        file_name = self.name + "_" + str(self.date_ing) + '.pkl'
+        file_name = "modelo_" + str(self.date_ing) + '.pkl'
         output_path = 's3://' + self.bucket_name + '/modelos/modelo_seleccionado/' + file_name
 
         return luigi.contrib.s3.S3Target(path=output_path, client=self.client, format=luigi.format.Nop)
