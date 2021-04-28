@@ -62,6 +62,9 @@ El pipeline diseñado para el proyecto hasta el momento incluye las siguientes e
 * **Extract**: Mediante una conexión programática vía API, descargamos los datos (Task de Ingesta) del sitio de [Chicago Food Inspections](https://data.cityofchicago.org/Health-Human-Services/Food-Inspections/4ijn-s7e5) cuya documentación puedes encontrar [aquí](https://dev.socrata.com/foundry/data.cityofchicago.org/4ijn-s7e5).
 * **Load**: Los datos se cargan (Task de Almacenamiento) en un bucket de S3 en AWS en formato .pkl.
 * **Transform**: Se aplican tareas de Cleaning & Preprocessing y Feature Engineering para obtener las columnas que el modelo requerirá. Las tablas corresponientes así como los metadatos asociados a cada una de las tarea se cargan en RDS.
+* **Modelado**: Se realiza una extracción de una muestra de los datos con el propósito de realizar el modelado sobre la variable a predecir: si pasará o no la inspección (Entrenamiento o Training). Luego, mediante un magic loop, se obtiene el mejor modelo para predecir con base en la métrica seleccionada (F1 Score) a partir de los algoritmos de Decision Trees y Random Forest que cuentan con distintos hiperparámetros. El modelo seleccionado queda almacenado en un pickle en S3.
+
+Cabe mencionar que por cada una de las tareas o Task mencionadas, se realizaron distintas pruebas unitarias o unit test con el propósito de probar una unidad/funcionalidad de código aislada para cada verificar que cada una haga lo que esperamos que realice y evitemos arrastrar errores en las tareas subsecuentes.
 
 ## 6. Requerimientos de Infraestructura
 
@@ -107,7 +110,7 @@ pip install -r requirements.txt
 
 La corrida del pipeline involucra la lectura de una serie de credenciales relacionadas con los servicios S3 y RDS de AWS así como un App Token generado de *Food Inspections* antes mencionado. Por lo que se debe crear un archivo: **./conf/local/credentials.yaml** que debe contener lo antes mencionado.
 
-- A a continuación se muestra un ejemplo genérico del contenido que debe tener este archivo:
+- A continuación se muestra un ejemplo genérico del contenido que debe tener este archivo:
 
 ```yaml
 s3:
@@ -149,7 +152,7 @@ luigid
 * Para la ejecución de nuestro pipeline hasta el momento, debemos ejecutar el siquiente comando:
  
 ```bash
-PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi FeatEngMetaTask --date-ing 2021-04-20 --type-ing consecutive
+PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi SeleccionMetaTask --date-ing 2021-04-28 --type-ing consecutive
 ```
 
 Dicho comando aplica todo el Pipeline hasta generar los metadatos asociados al Feature Engineering para obtener las columnas que el modelo requerirá. Las tablas corresponientes se cargan en RDS como se mencionó previamente. Cabe señalar que la clase de Luigi *FeatEngMetaTask* debe recibir como parámetros: 
@@ -162,23 +165,34 @@ Una vez ejecutada esta instrucción, puedes abrir un browser y escribir *localho
 
 Como vemos, para Luigi no es necesario correr los tasks previos de forma individual, sino que es posible correr directamente el task para generar los metadatos de Feature Engineering para que éste ejecute el task de Feature Engineering, el de los Metadatos asociados a la Limpieza y Procesamiento y así sucesivamente con los parámetros especificados. Lo anterior se debe a que en Luigi los pipelines se diseñan iniciando con la última tarea en ejecutarse, pues su diseño incluye obtener los elementos requeridos para ejecutar una tarea, si estos no han sido satisfechos entonces ejecutará antes las tareas que se requieren.
 
-A continuación añadimos el listado con los nombres de las tareas que también se pueden ejecutar de forma individual:
+A continuación añadimos el listado con los nombres de todas las tareas disponibles en nuestro pipeline que también se pueden ejecutar de forma individual así como la descripción y un ejemplo de cómo ejecutarla:
 
-* FeatEngMetaTask
-* FeatEngTask
-* PrepMetaTask
-* PrepTask
-* AlmMetaTask
-* AlmTask
-* IngMetaTask
-* IngTask
-
+| Tarea    | Desripción      | Ejemplo  de cómo correrlo  |
+| ---- | ------------ | --------- |
+| SeleccionMetaTask    |  Genera metadatos asociados a la selección del modelo        | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi SeleccionMetaTask --date-ing 2031-04-28 --type-ing consecutive     |
+| TestSeleccionTask    |  Se verifica que el mejor modelo seleccionado sea un Decision Tree (genera error si no)      | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TestSeleccionTask --date-ing 2031-04-28 --type-ing consecutive     |
+| SeleccionTask    |  Realiza selección del mejor modelo con base en la métrica F1 Score  | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi SeleccionTask --date-ing 2031-04-28 --type-ing consecutive     |
+| TrainMetaTask    |  Genera metadatos asociados a Entrenamiento      | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TrainMetaTask --date-ing 2031-04-28 --type-ing consecutive     |
+| TestTrainTask    |  Se revisa que la base no esté vacía y además cuente con 8 columnas       | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TestTrainTask --date-ing 2031-04-28 --type-ing consecutive     |
+| TrainTask    |  Realiza entrenamiento del modelo      | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TrainTask --date-ing 2031-04-28 --type-ing consecutive     |
+| FeatEngMetaTask    |  Genera metadatos asociados a Feature Engineering  | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi FeatEngMetaTask --date-ing 2031-04-28 --type-ing consecutive     |
+| TestFeatEngTask    |  Se revisa que la base no esté vacía y además cuente con 38 columnas     | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TestFeatEngTask --date-ing 2031-04-28 --type-ing consecutive     |
+| FeatEngTask    |  Se realiza feature engineering      | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi FeatEngTask --date-ing 2031-04-28 --type-ing consecutive     |
+| PrepMetaTask    |  Genera metadatos asociados a limpieza y preprocesamiento       | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi PrepMetaTask --date-ing 2031-04-28 --type-ing consecutive     |
+| TestPrepTask    |  Se revisa que la base no esté vacía y además cuente con 13 columnas      | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TestPrepTask --date-ing 2031-04-28 --type-ing consecutive     |
+| PrepTask    |  Realiza preprocesamiento y limpieza de la base  | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi PrepTask --date-ing 2031-04-28 --type-ing consecutive     |
+| AlmMetaTask    |  Genera metadatos asociados a almacenamiento     | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi AlmMetaTask --date-ing 2031-04-28 --type-ing consecutive     |
+| TestAlmTask    |  Se prueba que el pickle en S3 no esté vacío    | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TestAlmTask --date-ing 2031-04-28 --type-ing consecutive     |
+| AlmTask   |  Almacena los de datos en un pickle en S3     | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi AlmTask --date-ing 2031-04-28 --type-ing consecutive     |
+| IngMetaTask    |  Genera metadatos asociados a ingesta   | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi IngMetaTask --date-ing 2031-04-28 --type-ing consecutive     |
+| TestIngTask    |  Verifica que el número de columnas de la base ingestada sea 17      | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TestIngTask --date-ing 2031-04-28 --type-ing consecutive     |
+| IngTask    |  Genera la ingesta de datos       | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi IngTask --date-ing 2031-04-28 --type-ing consecutive     |
 
 #### 9. DAG con las tasks del Checkpoint 4 en verde
 
 Una vez ejecutado los comandos anteriores, se presenta como ejemplo una captura de nuestro DAG con todos los tasks en "Done".
 
-<img src="https://dl.dropboxusercontent.com/s/8qvvlqazwodvgsm/GAD_Checkpoint04.png?dl=0" heigth="500" width="1500">
+<img src="https://dl.dropboxusercontent.com/s/ynbn2z7fqoclux2/DAG_Checkpoint5.jpeg?dl=0" heigth="500" width="1500">
 
 ## 10. Estructura básica del proyecto
 

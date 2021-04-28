@@ -105,7 +105,7 @@ class test_train(marbles.core.TestCase):
 class test_seleccion(marbles.core.TestCase):
     """
         Clase con pruebas de Task Seleccion usando marbles:
-        1.- Señlar si el modelo es un árbol de decisión
+        1.- Señalar si el modelo es un árbol de decisión
     """
 
     def __init__(self, type_model):
