@@ -1086,7 +1086,7 @@ class TestTrainTask(CopyToTable):
             # Detenemos la ejecución del task dado que no se pasó todos
             # los unittest contenidos en 'test_almacenamiento'
             # por el Task que almacena los metadatos no se ejecutará
-            raise Exception("Falló pruebas unitarias preprocessing and cleaning")
+            raise Exception("Falló pruebas unitarias training")
 
         # Si no hubo errores se procede a subir la info de este Task de unittest a RDS
         metadata = {'type_ing': self.type_ing,
