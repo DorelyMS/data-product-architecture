@@ -68,7 +68,7 @@ Cabe mencionar que por cada una de las tareas o Task mencionadas, se realizaron 
 
 ## 6. Requerimientos de Infraestructura
 
-Los datos que se utilizan son almacenados en un bucket de Amazon [S3](https://aws.amazon.com/es/s3/). Una instancia EC2 de AWS llamada Bastión se utiliza como un filtro de seguridad el cual se conecta con otra EC2 (que se generó a partir de una imagen de la EC2 de bastión) utilizada para correr todo el código; y los resultados de cada etapa son almacenados en un servicio RDS de AWS.
+Los datos que se utilizan son almacenados en un bucket de Amazon [S3](https://aws.amazon.com/es/s3/). Una instancia EC2 de AWS llamada Bastión se utiliza como un filtro de seguridad el cual se conecta con otra EC2 (que se generó a partir de una imagen de la EC2 de bastión) utilizada para correr todo el código; y los resultados de cada etapa son almacenados en s3 o bien en un servicio RDS de AWS.
 
 ```
 Infraestructura: AWS
@@ -187,6 +187,18 @@ A continuación añadimos el listado con los nombres de todas las tareas disponi
 | IngMetaTask    |  Genera metadatos asociados a ingesta   | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi IngMetaTask --date-ing 2021-04-28 --type-ing consecutive     |
 | TestIngTask    |  Verifica que el número de columnas de la base ingestada sea 17      | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TestIngTask --date-ing 2021-04-28 --type-ing consecutive     |
 | IngTask    |  Genera la ingesta de datos       | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi IngTask --date-ing 2021-04-28 --type-ing consecutive     |
+
+Finalmente, es posible acceder a nuestra base "food" introduciendo el siguiente comando:
+
+```bash
+psql -h NombreEndpoint&port -U nombreusuario -d food
+```
+
+Y luego ejecutar el siguiente comando para poder ver los esquemas asociados a la base food para posteriormente hacer los querys que se deseen.
+
+```bash
+set search_path=clean,meta,models,public;
+```
 
 #### 9. DAG con las tasks del Checkpoint 4 en verde
 
