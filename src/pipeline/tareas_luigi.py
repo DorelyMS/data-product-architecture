@@ -205,7 +205,7 @@ class TestIngTask(CopyToTable):
             for failure in resultados.failures:
                 print(failure)
             # Si cacha un error, detiene la ejecución cuando len(failures)>0
-            raise Exception("Falló pruebas unitarias ingestión")
+            raise Exception("Falló pruebas unitarias Ingestion")
 
         # Si no hubo error se procede a subir la info de este Task a RDS
         metadata = {'type_ing': self.type_ing,
@@ -344,7 +344,7 @@ class TestAlmTask(CopyToTable):
     """
 
     fecha_ejecucion = datetime.datetime.now()
-    tarea = "Test_Almacenamiento"
+    tarea = "Test_Alm"
     bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
     type_ing = luigi.Parameter(default='consecutive')
     date_ing = luigi.DateParameter(default=datetime.date.today())
@@ -521,7 +521,7 @@ class AlmMetaTask(CopyToTable):
 
 class PrepTask(CopyToTable):
     """
-    Clase de Luigi que guarda los metadatos de Ingesta
+    Clase de Luigi que se encarga de Preprocesing and Cleaning
     """
 
     bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
@@ -601,11 +601,11 @@ class PrepTask(CopyToTable):
 
 class TestPrepTask(CopyToTable):
     """
-    Clase de Luigi que genera test de Preprocesing and Cleaning
+    Clase de Luigi que genera test de Preprocessing and Cleaning
     """
 
     fecha_ejecucion = datetime.datetime.now()
-    tarea = "Test_Preprocessing"
+    tarea = "Test_Prep"
     bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
     type_ing = luigi.Parameter(default='consecutive')
     date_ing = luigi.DateParameter(default=datetime.date.today())
@@ -671,7 +671,7 @@ class TestPrepTask(CopyToTable):
             # Detenemos la ejecución del task dado que no se pasó todos
             # los unittest contenidos en 'test_almacenamiento'
             # por el Task que almacena los metadatos no se ejecutará
-            raise Exception("Falló pruebas unitarias preprocessing and cleaning")
+            raise Exception("Falló pruebas unitarias Preprocessing and Cleaning")
 
         # Si no hubo errores se procede a subir la info de este Task de unittest a RDS
         metadata = {'type_ing': self.type_ing,
@@ -691,7 +691,7 @@ class TestPrepTask(CopyToTable):
 
 class PrepMetaTask(CopyToTable):
     """
-    Clase de Luigi que guarda los metadatos de Ingesta
+    Clase de Luigi que guarda los metadatos de Preprocessing and Cleaning
     """
 
     bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
@@ -729,7 +729,7 @@ class PrepMetaTask(CopyToTable):
             'date_inic': (self.date_ing - datetime.timedelta(days=6)).strftime("%Y-%m-%d"),
         }
 
-        print("Almacenamiento metadata")
+        print("Preprocessing and Cleaning metadata")
         print(self.fecha_ejecucion)
         print(self.tarea)
         print(metadata)
@@ -742,6 +742,9 @@ class PrepMetaTask(CopyToTable):
 
 
 class FeatEngTask(CopyToTable):
+    """
+    Clase de Luigi que se encarga de Feature Engineering
+    """
     bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
     type_ing = luigi.Parameter(default='consecutive')
     date_ing = luigi.DateParameter(default=datetime.date.today())
@@ -828,7 +831,7 @@ class TestFeatEngTask(CopyToTable):
     """
 
     fecha_ejecucion = datetime.datetime.now()
-    tarea = "Test_Feature_Engineering"
+    tarea = "Test_FeatEng"
     bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
     type_ing = luigi.Parameter(default='consecutive')
     date_ing = luigi.DateParameter(default=datetime.date.today())
@@ -894,7 +897,7 @@ class TestFeatEngTask(CopyToTable):
             # Detenemos la ejecución del task dado que no se pasó todos
             # los unittest contenidos en 'test_almacenamiento'
             # por el Task que almacena los metadatos no se ejecutará
-            raise Exception("Falló pruebas unitarias preprocessing and cleaning")
+            raise Exception("Falló pruebas unitarias Feature Engineering")
 
         # Si no hubo errores se procede a subir la info de este Task de unittest a RDS
         metadata = {'type_ing': self.type_ing,
@@ -902,7 +905,7 @@ class TestFeatEngTask(CopyToTable):
                     'date_inic': (self.date_ing - datetime.timedelta(days=6)).strftime("%Y-%m-%d"),
                     'test_results': 'No error unittest: ' + ','.join([i for i in dir(test_feateng) if i.startswith('test_')])
                     }
-        print("Test Preprocessing and Cleaning metadata")
+        print("Test Feature Engineering metadata")
         print(self.fecha_ejecucion)
         print(self.tarea)
         print(metadata)
@@ -914,7 +917,7 @@ class TestFeatEngTask(CopyToTable):
 
 class FeatEngMetaTask(CopyToTable):
     """
-    Clase de Luigi que guarda los metadatos de FeatEngTask
+    Clase de Luigi que guarda los metadatos de Feature Engineering
     """
 
     bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
@@ -966,7 +969,7 @@ class FeatEngMetaTask(CopyToTable):
 
 class TrainTask(PostgresQueryPickle):
     """
-    Clase de Luigi que guarda los metadatos de FeatEngTask
+    Clase de Luigi que se encarga de Trainning
     """
 
     bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
@@ -1016,7 +1019,7 @@ class TrainTask(PostgresQueryPickle):
 
 class TestTrainTask(CopyToTable):
     """
-    Clase de Luigi que genera test de Train
+    Clase de Luigi que genera test de Trainning
     """
 
     fecha_ejecucion = datetime.datetime.now()
@@ -1094,7 +1097,7 @@ class TestTrainTask(CopyToTable):
                     'date_inic': (self.date_ing - datetime.timedelta(days=6)).strftime("%Y-%m-%d"),
                     'test_results': 'No error unittest: ' + ','.join([i for i in dir(test_feateng) if i.startswith('test_')])
                     }
-        print("Test Preprocessing and Cleaning metadata")
+        print("Test Trainning metadata")
         print(self.fecha_ejecucion)
         print(self.tarea)
         print(metadata)
@@ -1106,7 +1109,7 @@ class TestTrainTask(CopyToTable):
 
 class TrainMetaTask(CopyToTable):
     """
-    Clase de Luigi que guarda los metadatos de FeatEngTask
+    Clase de Luigi que guarda los metadatos de Trainning
     """
 
     bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
@@ -1227,11 +1230,11 @@ class SeleccionTask(luigi.Task):
 
 class TestSeleccionTask(CopyToTable):
     """
-    Clase de Luigi que genera test de Almacenamiento
+    Clase de Luigi que genera test de Seleccion
     """
 
     fecha_ejecucion = datetime.datetime.now()
-    tarea = "Test_Almacenamiento"
+    tarea = "Test_Seleccion"
     bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
     type_ing = luigi.Parameter(default='consecutive')
     date_ing = luigi.DateParameter(default=datetime.date.today())
@@ -1320,7 +1323,7 @@ class TestSeleccionTask(CopyToTable):
 
 class SeleccionMetaTask(CopyToTable):
     """
-    Clase de Luigi que guarda los metadatos de FeatEngTask
+    Clase de Luigi que guarda los metadatos de Seleccion
     """
 
     bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
@@ -1393,7 +1396,7 @@ class SeleccionMetaTask(CopyToTable):
             'hiperparametros': hiperparametros
         }
 
-        print("Feature Engineering metadata")
+        print("Seleccion metadata")
         print(self.fecha_ejecucion)
         print(self.tarea)
         print(metadata)
