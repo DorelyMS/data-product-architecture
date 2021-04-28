@@ -12,7 +12,7 @@ Este es el repositorio del Proyecto Final para la materia de Arquitectura de Pro
 6. [Requerimientos_de_Infraestructura](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#6-requerimientos-de-infraestructura)
 7. [Instalación_y_configuración](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#7-instalaci%C3%B3n-y-configuraci%C3%B3n)
 8. [Ejecución](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#8-ejecuci%C3%B3n)
-9. [DAG con tasks Checkpoint 4](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#9-dag-con-las-tasks-del-checkpoint-4-en-verde)
+9. [DAG con tasks Checkpoint 5](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#9-dag-con-las-tasks-del-checkpoint-4-en-verde)
 10. [Estructura básica del proyecto](https://github.com/DorelyMS/data-product-architecture#estructura-básica-del-proyecto)
 11. [Integrantes del equipo](https://github.com/DorelyMS/data-product-architecture#integrantes-del-equipo)
 
@@ -155,7 +155,7 @@ luigid
 PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi SeleccionMetaTask --date-ing 2021-04-28 --type-ing consecutive
 ```
 
-Dicho comando aplica todo el Pipeline hasta generar los metadatos asociados al Feature Engineering para obtener las columnas que el modelo requerirá. Las tablas corresponientes se cargan en RDS como se mencionó previamente. Cabe señalar que la clase de Luigi *FeatEngMetaTask* debe recibir como parámetros: 
+Dicho comando aplica todo el Pipeline hasta generar los metadatos asociados al Feature Engineering para obtener las columnas que el modelo requerirá. Las tablas corresponientes se cargan en RDS como se mencionó previamente. Cabe señalar que la clase de Luigi *SeleccionMetaTask* debe recibir como parámetros: 
 
     - nombre del bucket (en nuestro caso el default es: data-product-architecture-4) donde se desea guardar el archivo con los datos históricos en formato .pkl
     - la fecha de ejecución en formato 'YYYY-MM-DD' (la cual indica el día de corte hasta donde se descargarán los datos, donde el default la fecha del día en que se ejecuta)
@@ -228,6 +228,7 @@ Una vez ejecutado los comandos anteriores, se presenta como ejemplo una captura 
     │
     │
     ├── pipeline          <- Script with Luigi Tasks for ingestion and storage
+        ├── tests         <- Unit tests for Luigi Tasks    
 ```
 
 Figura 1. Estructura básica del proyecto.
