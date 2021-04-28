@@ -200,7 +200,7 @@ Y luego ejecutar el siguiente comando para poder ver los esquemas asociados a la
 set search_path=clean,meta,models,public;
 ```
 
-#### 9. DAG con las tasks del Checkpoint 4 en verde
+#### 9. DAG con las tasks del Checkpoint 5 en verde
 
 Una vez ejecutado los comandos anteriores, se presenta como ejemplo una captura de nuestro DAG con todos los tasks en "Done".
 
