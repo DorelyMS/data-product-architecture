@@ -8,6 +8,7 @@ import datetime
 import psycopg2
 import socket
 import pickle
+import joblib
 from sodapy import Socrata
 import luigi
 import luigi.contrib.s3
@@ -1219,10 +1220,10 @@ class SeleccionTask(luigi.Task):
         self.client.remove(output_path)
 
         with self.output().open('w') as outfile:
-            pickle.dump(model, outfile)
+            joblib.dump(model, outfile)
 
     def output(self):
-        file_name = "modelo_" + str(self.date_ing) + '.pkl'
+        file_name = "modelo_" + str(self.date_ing) + '.joblib'
         output_path = 's3://' + self.bucket_name + '/modelos/modelo_seleccionado/' + file_name
 
         return luigi.contrib.s3.S3Target(path=output_path, client=self.client, format=luigi.format.Nop)
@@ -1269,7 +1270,7 @@ class TestSeleccionTask(CopyToTable):
                                  aws_secret_access_key=s3_creds['aws_secret_access_key'])
 
         # definimos nombres y paths apropiados
-        file_name= "modelo_" + str(self.date_ing) + '.pkl'
+        file_name= "modelo_" + str(self.date_ing) + '.joblib'
         aux_path = 'modelos/modelo_seleccionado/'
         # A diferencia de otros Task, aquí no obtendremos local_path ni output_path,
         # sino un path conveniente para la función que usamos para leer de s3
