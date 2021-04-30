@@ -2,13 +2,10 @@
 import numpy as np
 import pandas as pd
 import boto3
-import boto3.session
-import json
+import json, pickle, joblib
 import datetime
 import psycopg2
 import socket
-import pickle
-import joblib
 from sodapy import Socrata
 import luigi
 import luigi.contrib.s3
@@ -19,6 +16,10 @@ from sklearn.model_selection import train_test_split
 # Funciones importadas de data-product-architecture/src/utils/general.py
 # para lectura de credenciales, apis y funciones auxiliares
 import src.utils.general as general
+
+# Funciones importadas de data-product-architecture/src/utils/general.py
+# para lectura de credenciales, apis y funciones auxiliares
+import src.pipeline.ingesta_alamacenamiento as ingesta_almacenamiento
 
 # Funciones importadas de data-product-architecture/src/utils/train.py
 # para dividir base (entrenamiento y prueba) y generar modelos (magic-loop)
@@ -42,59 +43,7 @@ from src.pipeline.tests.unittests_tareas_luigi import test_ing, test_alm, test_p
 
 # Constantes importadas de data-product-architecture/src/utils/constants.py
 # para que el usuario ingrese sus propias credenciales, bucket de s3
-from src.utils.constants import NOMBRE_BUCKET, ID_SOCRATA, PATH_CREDENCIALES
-
-
-def get_client(cred_path=PATH_CREDENCIALES):
-    """
-    Esta función regresa un cliente que se puede conectar a la API de inspecciones
-    de establecimiento dándole un token previamente generado.
-    """
-
-    token = general.get_api_token(cred_path)
-    client = Socrata("data.cityofchicago.org", token)
-
-    return client
-
-
-def ingesta_inicial(client):
-    """
-    Esta función recibe como parámetros el cliente 	con el que nos podemos comunicar
-    con la API, y el límite de registros que queremos obtener al llamar a la API.
-    Regresa una lista de los elementos que la API regresó.
-    """
-
-    socrata_id = ID_SOCRATA
-    file_name = 'historic_inspections-' + str(datetime.date.today()) + '.pkl'
-
-    results = client.get_all(socrata_id)
-
-    data = []
-
-    for line in results:
-        data.append(line)
-
-    with open(file_name, 'wb') as pkl:
-        pickle.dump(data, pkl)
-
-    return file_name
-
-
-def get_s3_resource(cred_path=PATH_CREDENCIALES):
-    """
-    Esta función regresa un resource de S3 para poder guardar datos en el bucket
-    """
-
-    s3_creds = general.get_s3_credentials(cred_path)
-
-    session = boto3.Session(
-        aws_access_key_id=s3_creds['aws_access_key_id'],
-        aws_secret_access_key=s3_creds['aws_secret_access_key']
-    )
-
-    s3 = session.client('s3')
-
-    return s3
+from src.utils.constants import NOMBRE_BUCKET, FOOD_CONECTION, ID_SOCRATA, PATH_CREDENCIALES
 
 
 class IngTask(luigi.Task):
@@ -111,7 +60,7 @@ class IngTask(luigi.Task):
     type_ing = luigi.Parameter(default='consecutive')
 
     def run(self):
-        client = get_client()
+        client = ingesta_almacenamiento.get_client()
 
         if self.type_ing == 'consecutive':
             init_date = self.date_ing - datetime.timedelta(days=6)
