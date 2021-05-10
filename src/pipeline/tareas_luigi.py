@@ -1162,6 +1162,7 @@ class SeleccionTask(luigi.Task):
         y = X_train['pass'].astype(int)
         rfc = RandomForestClassifier(**self.hiperparametros)
         rfc.fit(X, y)
+        print(rfc)
 
         model = pickle.dumps(rfc)
 
@@ -1169,10 +1170,10 @@ class SeleccionTask(luigi.Task):
         self.client.remove(output_path)
 
         with self.output().open('w') as outfile:
-            joblib.dump(model, outfile)
+            pickle.dump(model, outfile)
 
     def output(self):
-        file_name = "modelo_" + str(self.date_ing) + '.joblib'
+        file_name = "modelo_" + str(self.date_ing) + '.pkl'
         output_path = 's3://' + self.bucket_name + '/modelos/modelo_seleccionado/' + file_name
 
         return luigi.contrib.s3.S3Target(path=output_path, client=self.client, format=luigi.format.Nop)
@@ -1219,13 +1220,12 @@ class TestSeleccionTask(CopyToTable):
                                  aws_secret_access_key=s3_creds['aws_secret_access_key'])
 
         # definimos nombres y paths apropiados
-        file_name= "modelo_" + str(self.date_ing) + '.joblib'
+        file_name= "modelo_" + str(self.date_ing) + '.pkl'
         aux_path = 'modelos/modelo_seleccionado/'
         # A diferencia de otros Task, aquí no obtendremos local_path ni output_path,
         # sino un path conveniente para la función que usamos para leer de s3
         # (ligeramente diferente)
         path_s3 = aux_path + file_name
-        response = s3client.get_object(Bucket=self.bucket_name, Key=path_s3)
         try:
             # Usamos 'try' porque "tratamos" de leer el pkl de s3,
             # si no existe provocará error y se ejecutará lo que está en 'except'
