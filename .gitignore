@@ -143,4 +143,5 @@ notebooks/eda/Visualizaciones_ocultas.ipynb
 .idea/
 .idea
 
+modelo.joblib
 
