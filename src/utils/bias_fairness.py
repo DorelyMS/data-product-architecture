@@ -1,13 +1,14 @@
+import numpy as np
+import pandas as pd
+import psycopg2, pickle
+import boto3
+import src.utils.general as general
+from src.utils.constants import NOMBRE_BUCKET, ID_SOCRATA, PATH_CREDENCIALES
+
+import luigi.contrib.s3
+
+
 def fun_bias_fair():
-
-    import numpy as np
-    import pandas as pd
-    import psycopg2
-    import boto3
-    import src.utils.general as general
-    from src.utils.constants import NOMBRE_BUCKET, ID_SOCRATA, PATH_CREDENCIALES
-
-
 
     creds = general.get_db_credentials(PATH_CREDENCIALES)
     user = creds['user']
@@ -21,40 +22,36 @@ def fun_bias_fair():
         host = host,
         password = password)
 
-
-
-    import luigi.contrib.s3
-    import pickle
-    import joblib
+    aux_path = 'modelos/modelo_seleccionado/'
+    output_path = 's3://' + NOMBRE_BUCKET + "/" + aux_path
 
     s3_creds = general.get_s3_credentials(PATH_CREDENCIALES)
     client = luigi.contrib.s3.S3Client(
-    aws_access_key_id=s3_creds['aws_access_key_id'],
-    aws_secret_access_key=s3_creds['aws_secret_access_key'])
-    output_path = 's3://' + NOMBRE_BUCKET + '/modelos/modelo_seleccionado/'
-    gen = client.list(output_path)
-    archivo = next(gen)
-    client.get(output_path+archivo, './modelo.joblib')
-    #model_p = pickle.loads(mod)
-    #model = pickle.loads(model_p)
-    model = joblib.load('./modelo.joblib')
-
-    # Conexion S3
-    session = boto3.Session(
         aws_access_key_id=s3_creds['aws_access_key_id'],
-        aws_secret_access_key=s3_creds['aws_secret_access_key']
-    )
+        aws_secret_access_key=s3_creds['aws_secret_access_key'])
+    gen = client.list(output_path)
+    file_name = next(gen)
 
+    session = boto3.session.Session(region_name='us-west-2')
+    s3client = session.client('s3', config=boto3.session.Config(signature_version='s3v4'),
+                             aws_access_key_id=s3_creds['aws_access_key_id'],
+                             aws_secret_access_key=s3_creds['aws_secret_access_key'])
+
+    path_s3 = aux_path + file_name
+
+    response = s3client.get_object(Bucket=NOMBRE_BUCKET, Key=path_s3)
+    body_string = response['Body'].read()
+    model = pickle.loads(body_string)
+    model = pickle.loads(model)
+
+    # Conexion postgres
     a_zip = pd.read_sql_query("select zip, zone from clean.zip_zones;", con=conn)
     a_type = pd.read_sql_query("select * from clean.facility_group;", con=conn)
     fea_eng = pd.read_sql_query("select * from clean.feature_eng;", con=conn)
     conn.close()
 
-    X = fea_eng.drop(
-        ['aka_name', 'facility_type', 'address', 'inspection_date', 'inspection_type', 'violations', 'results', 'pass','days_since_last_inspection'],
-        axis=1)
+    X = fea_eng.drop(['aka_name', 'facility_type', 'address', 'inspection_date', 'inspection_type', 'violations', 'results', 'pass'], axis=1)
     y_pred = model.predict(X)
-
 
 
     xt = pd.DataFrame([fea_eng['zip'].astype(float), fea_eng['facility_type'], fea_eng['pass'], y_pred]).transpose()
