@@ -1,8 +1,11 @@
+
+
 import numpy as np
 import pandas as pd
 import psycopg2
 import src.utils.general as general
 from src.utils.constants import NOMBRE_BUCKET, ID_SOCRATA, PATH_CREDENCIALES
+
 
 
 creds = general.get_db_credentials(PATH_CREDENCIALES)
@@ -46,14 +49,15 @@ y_pred = model.predict(fea_eng)
 
 xt = pd.DataFrame([fea_eng['zip'], fea_eng['facility_type'], fea_eng['pass'], y_pred]).transpose()
 compas = pd.merge(left=xt, right=a_zip, how = 'left', left_on= 'zip', right_on = 'zip')
-compas = pd.merge(left=xt, right=a_type, how = 'left', left_on= 'facility_type', right_on = 'facility_type')
+compas = pd.merge(left=compas, right=a_type, how = 'left', left_on= 'facility_type', right_on = 'facility_type')
 compas = compas.rename(columns={'Unnamed 0':'score', 'pass':'label_value'})
+
+compas.pop('zip')
+compas.pop('facility_type')
 
 compas['zone'] = compas['zone'].astype(str)
 compas['score'] = compas['score'].astype(int)
 compas['label_value'] = compas['label_value'].astype(int)
-
-compas.pop('zip', 'facility_type')
 
 
 from aequitas.group import Group
