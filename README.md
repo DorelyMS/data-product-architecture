@@ -1,27 +1,26 @@
 ## Proyecto Arquitectura de Productos de Datos
 
-Este es el repositorio del Proyecto Final para la materia de Arquitectura de Productos de Datos del semestre 2021-2 en la Maestría en Ciencia de Datos, ITAM. El presente trabajo analiza el dataset [Chicago Food Inspections](https://data.cityofchicago.org/Health-Human-Services/Food-Inspections/4ijn-s7e5) que incluye información sobre las inspecciones de restaurantes y otros establecimientos de comida en Chicago desde el 1 de Enero 2010 al presente con el fin de predecir para nuevas observaciones si el establecimiento pasará o no la inspección. 
+Este es el repositorio del Proyecto Final para la materia de Arquitectura de Productos de Datos del semestre 2021-2 en la Maestría en Ciencia de Datos, ITAM. 
 
 ## Contenido
 
-+ [Integrantes del equipo](https://github.com/DorelyMS/data-product-architecture#integrantes-del-equipo)
-+ [Summary](https://github.com/DorelyMS/data-product-architecture#summary-de-los-datos-con-los-que-trabajamos)
-+ [Pregunta analítica](https://github.com/DorelyMS/data-product-architecture/blob/main/README.md#pregunta-anal%C3%ADtica)
-+ [Frecuencia de actualización de los datos](https://github.com/DorelyMS/data-product-architecture#frecuencia-de-actualización-de-los-datos)
-+ [Estructura básica del proyecto](https://github.com/DorelyMS/data-product-architecture#estructura-básica-del-proyecto)
+1. [Introducción](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#1-introducci%C3%B3n)
+2. [Summary](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#2-summary-de-los-datos-para-eda-actualizado-al-15-de-enero-2021)
+3. [Pregunta analítica](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#3-pregunta-anal%C3%ADtica)
+4. [Frecuencia de actualización de los datos](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#4-frecuencia-de-actualizaci%C3%B3n-de-los-datos)
+5. [Overview_Pipeline](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#5-overview-pipeline)
+6. [Requerimientos_de_Infraestructura](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#6-requerimientos-de-infraestructura)
+7. [Instalación_y_configuración](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#7-instalaci%C3%B3n-y-configuraci%C3%B3n)
+8. [Ejecución](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#8-ejecuci%C3%B3n)
+9. [DAG con tasks Checkpoint 5](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#9-dag-con-las-tasks-del-checkpoint-4-en-verde)
+10. [Estructura básica del proyecto](https://github.com/DorelyMS/data-product-architecture#estructura-básica-del-proyecto)
+11. [Integrantes del equipo](https://github.com/DorelyMS/data-product-architecture#integrantes-del-equipo)
 
-## Integrantes del equipo
+## 1. Introducción
 
-En la siguiente tabla se encuentran los integrantes del equipo:
+El presente trabajo analiza el dataset [Chicago Food Inspections](https://data.cityofchicago.org/Health-Human-Services/Food-Inspections/4ijn-s7e5) que incluye información sobre las inspecciones de restaurantes y otros establecimientos de comida en Chicago desde el 1 de Enero 2010 al presente con el fin de predecir para nuevas observaciones si el establecimiento pasará o no la inspección.
 
-| #    | Persona      | Github    |
-| ---- | ------------ | --------- |
-| 1    |  Bruno       | brunocgf     |
-| 2    |  Dorely      | DorelyMS     |
-| 3    |  Guillermo   | gzarazua     |
-| 4    |  Yusuri      | YusuriAR     |
-
-## Summary de los datos con los que trabajamos
+## 2. Summary de los datos para EDA (actualizado al 15 de enero 2021)
 
 + Número de registros: 215,026 (Es importante resaltar que esta base fue extraída el día 15/01/2021 y el número de registros varía con una nueva fecha.)
 + Número de columnas: 17
@@ -29,7 +28,7 @@ En la siguiente tabla se encuentran los integrantes del equipo:
        'Risk', 'Address', 'City', 'State', 'Zip', 'Inspection Date',
        'Inspection Type', 'Results', 'Violations', 'Latitude', 'Longitude',
        'Location'.
-+ A continuación agregamos la información correspondiente a la descripción de cada variable la cual fue tomada directamente de la [referencia oficinal](http://bit.ly/tS9IE8) sugerida para su consulta dentro del portal [Chicago Food Inspections](https://data.cityofchicago.org/Health-Human-Services/Food-Inspections/4ijn-s7e5) 
++ A continuación agregamos la información correspondiente a la descripción de cada variable la cual fue tomada directamente de la [referencia oficial](http://bit.ly/tS9IE8) sugerida para su consulta dentro del portal [Chicago Food Inspections](https://data.cityofchicago.org/Health-Human-Services/Food-Inspections/4ijn-s7e5) 
     + **Inspection ID**: Es el ID o número único asignado a la inspección.
   + **DBA Name:** Esta variable corresponde al nombre legal del establecimiento. DBA significa: 'Doing business as'.
   + **AKA Name:** Esta variable corresponde al nombre comercial del establecimiento, es decir, el nombre con el que sus clientes identifican al restaurante. AKA significa 'Also known as'.
@@ -48,15 +47,166 @@ En la siguiente tabla se encuentran los integrantes del equipo:
   + **Longitude:** Esta variable corresponde a la coordenada geográfica de longitud donde se localiza el establecimiento.
   + **Location:** Esta variable corresponde a las coordenadas geográficas de (longitud y latitud) donde se localiza el establecimiento.
 
-## Pregunta analítica
+## 3. Pregunta analítica
 
 La pregunta analítica a contestar con el modelo predictivo es: ¿El establecimiento pasará o no la inspección?
 
-## Frecuencia de actualización de los datos
+## 4. Frecuencia de actualización de los datos
 
 La frecuencia de la actualización del dataset [Chicago Food Inspections](https://data.cityofchicago.org/Health-Human-Services/Food-Inspections/4ijn-s7e5) es diaria. Sin embargo, la frecuencia de actualización de nuestro producto de datos será semanal.
 
-## Estructura básica del proyecto
+## 5. Overview Pipeline
+
+El pipeline diseñado para el proyecto hasta el momento incluye las siguientes etapas:
+
+* **Extract**: Mediante una conexión programática vía API, descargamos los datos (Task de Ingesta) del sitio de [Chicago Food Inspections](https://data.cityofchicago.org/Health-Human-Services/Food-Inspections/4ijn-s7e5) cuya documentación puedes encontrar [aquí](https://dev.socrata.com/foundry/data.cityofchicago.org/4ijn-s7e5).
+* **Load**: Los datos se cargan (Task de Almacenamiento) en un bucket de S3 en AWS en formato .pkl.
+* **Transform**: Se aplican tareas de Cleaning & Preprocessing y Feature Engineering para obtener las columnas que el modelo requerirá. Las tablas corresponientes así como los metadatos asociados a cada una de las tarea se cargan en RDS.
+* **Modelado**: Se realiza una extracción de una muestra de los datos con el propósito de realizar el modelado sobre la variable a predecir: si pasará o no la inspección (Entrenamiento o Training). Luego, mediante un magic loop, se obtiene el mejor modelo para predecir con base en la métrica seleccionada (F1 Score) a partir de los algoritmos de Decision Trees y Random Forest que cuentan con distintos hiperparámetros. El modelo seleccionado queda almacenado en un pickle en S3.
+
+Cabe mencionar que por cada una de las tareas o Task mencionadas, se realizaron distintas pruebas unitarias o unit test con el propósito de probar una unidad/funcionalidad de código aislada para cada verificar que cada una haga lo que esperamos que realice y evitemos arrastrar errores en las tareas subsecuentes.
+
+## 6. Requerimientos de Infraestructura
+
+Los datos que se utilizan son almacenados en un bucket de Amazon [S3](https://aws.amazon.com/es/s3/). Una instancia EC2 de AWS llamada Bastión se utiliza como un filtro de seguridad el cual se conecta con otra EC2 (que se generó a partir de una imagen de la EC2 de bastión) utilizada para correr todo el código; y los resultados de cada etapa son almacenados en s3 o bien en un servicio RDS de AWS.
+
+```
+Infraestructura: AWS
+
++ AMI: ami-025102f49d03bec05, Ubuntu Server 18.04 LTS (HVM)
++ EC2 Instance Bastion: T3.small
+  + GPU: 1
+  + vCPU: 2
+  + RAM: 2 GB
++ OS: Ubuntu Server 18.04 LTS
++ Volumes: 1
+  + Type: gp2
+  + Size: 20 GB
++ AMI: ami-0dfa90bae725936dc, Ubuntu Server 18.04 LTS (HVM)
++ EC2 Instance: c5.xlarge
+  + GPU: 1
+  + vCPU: 4
+  + RAM: 8 GB
++ OS: Ubuntu Server 18.04 LTS
++ Volumes: 1
+  + Type: gp2
+  + Size: 20 GB
++ RDS: PostgreSQL
+  + Engine: PostgreSQL
+  + Engine version: 12.5
+  + Instance: db.t2.micro
+  + vCPU: 1
+  + RAM: 1 GB
+  + Storage: 100 GB
+```
+
+## 7. Instalación y configuración
+
+Para poder interactuar con este repositorio, debes clonar la rama main para hacer una copia local del repo en tu máquina. Es necesario crear un pyenv-virtualenv con la versión de **Python 3.8.6**, activarlo e instalar los **requirements.txt** ejecutando el siguiente comando una vez estando dentro del ambiente virtual:
+
+```bash
+pip install -r requirements.txt
+```
+
+La corrida del pipeline involucra la lectura de una serie de credenciales relacionadas con los servicios S3 y RDS de AWS así como un App Token generado de *Food Inspections* antes mencionado. Por lo que se debe crear un archivo: **./conf/local/credentials.yaml** que debe contener lo antes mencionado.
+
+- A continuación se muestra un ejemplo genérico del contenido que debe tener este archivo:
+
+```yaml
+s3:
+   aws_access_key_id: "your_key_id"
+   aws_secret_access_key: "your_secret_key"
+
+food_inspections:
+   api_token: "your_session_token_for_API_Chicago_Food"
+
+db:
+ user: "your_user"
+ password: "your_databse_password"
+ database: "food"
+ host: "your_end-point"
+ port: "your_port"
+```
+
+
+## 8. Ejecución
+
+## Proceso de Ejecución del pipeline diseñado para el proyecto hasta el momento
+
+#### Para ejecutar los tasks, es necesario estar posicionado en la carpeta de data-product-arquitecture y ejecutar en terminal:
+
+```bash
+export PYTHONPATH=$PWD
+```
+
+Dentro de **src/utils/constants.py** se guardaron las constantes de nuestro proyecto: PATH_CREDENCIALES, NOMBRE_BUCKET y ID_SOCRATA para referenciar la ruta del archivo **./conf/local/credentials.yaml**, colocar el nombre del BUCKET para conectarnos a S3 y guardar el ID de la API para la extracción de los datos con el objetivo de que se puedan editar si se quiere reproducir el proyecto.
+
+Para la creación de los tasks, se utilizó Luigi que es un Orquestador de pipelines que utiliza un DAG para administrar el orden de las tareas en el pipeline. Puedes consultar la documentación de Luigi [aquí](https://luigi.readthedocs.io/en/stable/index.html). Para habilitar su scheduler desde el browser de tu navegador debes abrir otra terminal, activar el pyenv y escribir el siguiente comando desde otra terminal:
+
+```bash
+luigid
+```
+
+#### Ejemplos de Ejecución 
+
+* Para la ejecución de nuestro pipeline hasta el momento, debemos ejecutar el siquiente comando:
+ 
+```bash
+PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi SeleccionMetaTask --date-ing 2021-04-28 --type-ing consecutive
+```
+
+Dicho comando aplica todo el Pipeline hasta generar los metadatos asociados al Feature Engineering para obtener las columnas que el modelo requerirá. Las tablas corresponientes se cargan en RDS como se mencionó previamente. Cabe señalar que la clase de Luigi *SeleccionMetaTask* debe recibir como parámetros: 
+
+    - nombre del bucket (en nuestro caso el default es: data-product-architecture-4) donde se desea guardar el archivo con los datos históricos en formato .pkl
+    - la fecha de ejecución en formato 'YYYY-MM-DD' (la cual indica el día de corte hasta donde se descargarán los datos, donde el default la fecha del día en que se ejecuta)
+    - el tipo de ingestión deberá ser *historic*, para obtener la información desde Enero de 2010 y *consecutive* (default) para obtener una actualización de los últimos 7 días incluyendo la fecha de corte.
+
+Una vez ejecutada esta instrucción, puedes abrir un browser y escribir *localhost:8082/* para ver el DAG con los tasks.
+
+Como vemos, para Luigi no es necesario correr los tasks previos de forma individual, sino que es posible correr directamente el task para generar los metadatos de Feature Engineering para que éste ejecute el task de Feature Engineering, el de los Metadatos asociados a la Limpieza y Procesamiento y así sucesivamente con los parámetros especificados. Lo anterior se debe a que en Luigi los pipelines se diseñan iniciando con la última tarea en ejecutarse, pues su diseño incluye obtener los elementos requeridos para ejecutar una tarea, si estos no han sido satisfechos entonces ejecutará antes las tareas que se requieren.
+
+A continuación añadimos el listado con los nombres de todas las tareas disponibles en nuestro pipeline que también se pueden ejecutar de forma individual así como la descripción y un ejemplo de cómo ejecutarla:
+
+| Tarea    | Descripción      | Ejemplo  de cómo correrlo  |
+| ---- | ------------ | --------- |
+| SeleccionMetaTask    |  Genera metadatos asociados a la selección del modelo        | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi SeleccionMetaTask --date-ing 2021-04-28 --type-ing consecutive     |
+| TestSeleccionTask    |  Se verifica que el mejor modelo seleccionado sea un Decision Tree (genera error si no)      | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TestSeleccionTask --date-ing 2021-04-28 --type-ing consecutive     |
+| SeleccionTask    |  Realiza selección del mejor modelo con base en la métrica F1 Score  | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi SeleccionTask --date-ing 2021-04-28 --type-ing consecutive     |
+| TrainMetaTask    |  Genera metadatos asociados a Entrenamiento      | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TrainMetaTask --date-ing 2021-04-28 --type-ing consecutive     |
+| TestTrainTask    |  Se revisa que la base no esté vacía y además cuente con 8 columnas       | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TestTrainTask --date-ing 2021-04-28 --type-ing consecutive     |
+| TrainTask    |  Realiza entrenamiento del modelo      | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TrainTask --date-ing 2021-04-28 --type-ing consecutive     |
+| FeatEngMetaTask    |  Genera metadatos asociados a Feature Engineering  | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi FeatEngMetaTask --date-ing 2021-04-28 --type-ing consecutive     |
+| TestFeatEngTask    |  Se revisa que la base no esté vacía y además cuente con 38 columnas     | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TestFeatEngTask --date-ing 2021-04-28 --type-ing consecutive     |
+| FeatEngTask    |  Se realiza feature engineering      | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi FeatEngTask --date-ing 2021-04-28 --type-ing consecutive     |
+| PrepMetaTask    |  Genera metadatos asociados a limpieza y preprocesamiento       | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi PrepMetaTask --date-ing 2021-04-28 --type-ing consecutive     |
+| TestPrepTask    |  Se revisa que la base no esté vacía y además cuente con 13 columnas      | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TestPrepTask --date-ing 2021-04-28 --type-ing consecutive     |
+| PrepTask    |  Realiza preprocesamiento y limpieza de la base  | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi PrepTask --date-ing 2021-04-28 --type-ing consecutive     |
+| AlmMetaTask    |  Genera metadatos asociados a almacenamiento     | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi AlmMetaTask --date-ing 2021-04-28 --type-ing consecutive     |
+| TestAlmTask    |  Se prueba que el pickle en S3 no esté vacío    | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TestAlmTask --date-ing 2021-04-28 --type-ing consecutive     |
+| AlmTask   |  Almacena los de datos en un pickle en S3     | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi AlmTask --date-ing 2021-04-28 --type-ing consecutive     |
+| IngMetaTask    |  Genera metadatos asociados a ingesta   | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi IngMetaTask --date-ing 2021-04-28 --type-ing consecutive     |
+| TestIngTask    |  Verifica que el número de columnas de la base ingestada sea 17      | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TestIngTask --date-ing 2021-04-28 --type-ing consecutive     |
+| IngTask    |  Genera la ingesta de datos       | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi IngTask --date-ing 2021-04-28 --type-ing consecutive     |
+
+Finalmente, es posible acceder a nuestra base "food" introduciendo el siguiente comando:
+
+```bash
+psql -h NombreEndpoint&port -U nombreusuario -d food
+```
+
+Y luego ejecutar el siguiente comando para poder ver los esquemas asociados a la base food para posteriormente hacer los querys que se deseen.
+
+```bash
+set search_path=clean,meta,models,public;
+```
+
+#### 9. DAG con las tasks del Checkpoint 5 en verde
+
+Una vez ejecutado los comandos anteriores, se presenta como ejemplo una captura de nuestro DAG con todos los tasks en "Done".
+
+<img src="https://dl.dropboxusercontent.com/s/ynbn2z7fqoclux2/DAG_Checkpoint5.jpeg?dl=0" heigth="500" width="1500">
+
+## 10. Estructura básica del proyecto
 
 ```bash
 ├── README.md             <- The top-level README for developers using this project.
@@ -67,6 +217,7 @@ La frecuencia de la actualización del dataset [Chicago Food Inspections](https:
 ├── docs                  <- Space for Sphinx documentation
 │
 ├── notebooks             <- Jupyter notebooks.
+│   ├── eda               <- In this folder you can find our Exploratory Data Analysis (EDA)
 │
 ├── references            <- Data dictionaries, manuals, and all other explanatory materials.
 │
@@ -88,11 +239,20 @@ La frecuencia de la actualización del dataset [Chicago Food Inspections](https:
     ├── etl               <- Scripts to transform data from raw to intermediate
     │
     │
-    ├── pipeline
-
+    ├── pipeline          <- Script with Luigi Tasks for ingestion and storage
+        ├── tests         <- Unit tests for Luigi Tasks    
 ```
 
 Figura 1. Estructura básica del proyecto.
 
-Nota: La versión de Python utilizada es Python 3.8.6
 
+## 11. Integrantes del equipo
+
+En la siguiente tabla se encuentran los integrantes del equipo:
+
+| #    | Persona      | Github    |
+| ---- | ------------ | --------- |
+| 1    |  Bruno       | brunocgf     |
+| 2    |  Dorely      | DorelyMS     |
+| 3    |  Guillermo   | gzarazua     |
+| 4    |  Yusuri      | YusuriAR     |
