@@ -1,8 +1,9 @@
-def fun_bias_fair ():
+def fun_bias_fair():
 
     import numpy as np
     import pandas as pd
     import psycopg2
+    import boto3
     import src.utils.general as general
     from src.utils.constants import NOMBRE_BUCKET, ID_SOCRATA, PATH_CREDENCIALES
 
@@ -20,14 +21,11 @@ def fun_bias_fair ():
         host = host,
         password = password)
 
-    # Conexion S3
-    session = boto3.Session(
-        aws_access_key_id=s3_creds['aws_access_key_id'],
-        aws_secret_access_key=s3_creds['aws_secret_access_key']
-    )
+
 
     import luigi.contrib.s3
     import pickle
+    import joblib
 
     s3_creds = general.get_s3_credentials(PATH_CREDENCIALES)
     client = luigi.contrib.s3.S3Client(
@@ -36,18 +34,31 @@ def fun_bias_fair ():
     output_path = 's3://' + NOMBRE_BUCKET + '/modelos/modelo_seleccionado/'
     gen = client.list(output_path)
     archivo = next(gen)
-    mod = client.get_as_bytes(output_path+archivo)
-    model_p = pickle.loads(mod)
-    model = pickle.loads(model_p)
+    client.get(output_path+archivo, './modelo.joblib')
+    #model_p = pickle.loads(mod)
+    #model = pickle.loads(model_p)
+    model = joblib.load('./modelo.joblib')
+
+    # Conexion S3
+    session = boto3.Session(
+        aws_access_key_id=s3_creds['aws_access_key_id'],
+        aws_secret_access_key=s3_creds['aws_secret_access_key']
+    )
 
     a_zip = pd.read_sql_query("select zip, zone from clean.zip_zones;", con=conn)
     a_type = pd.read_sql_query("select * from clean.facility_group;", con=conn)
-    fea_eng = pd.read_sql_query("select * from from clean.feature_eng;", con=conn)
+    fea_eng = pd.read_sql_query("select * from clean.feature_eng;", con=conn)
     conn.close()
 
-    y_pred = model.predict(fea_eng)
+    X = fea_eng.drop(
+        ['aka_name', 'facility_type', 'address', 'inspection_date', 'inspection_type', 'violations', 'results', 'pass','days_since_last_inspection'],
+        axis=1)
+    y_pred = model.predict(X)
 
-    xt = pd.DataFrame([fea_eng['zip'], fea_eng['facility_type'], fea_eng['pass'], y_pred]).transpose()
+
+
+    xt = pd.DataFrame([fea_eng['zip'].astype(float), fea_eng['facility_type'], fea_eng['pass'], y_pred]).transpose()
+    a_zip['zip']=a_zip['zip'].astype(float)
     compas = pd.merge(left=xt, right=a_zip, how = 'left', left_on= 'zip', right_on = 'zip')
     compas = pd.merge(left=compas, right=a_type, how = 'left', left_on= 'facility_type', right_on = 'facility_type')
     compas = compas.rename(columns={'Unnamed 0':'score', 'pass':'label_value'})
@@ -58,7 +69,7 @@ def fun_bias_fair ():
     compas['zone'] = compas['zone'].astype(str)
     compas['score'] = compas['score'].astype(int)
     compas['label_value'] = compas['label_value'].astype(int)
-
+    #print(compas.isnull().sum())
 
     from aequitas.group import Group
     from aequitas.bias import Bias
@@ -71,6 +82,7 @@ def fun_bias_fair ():
     xtab[[col for col in xtab.columns if col not in absolute_metrics]]
     group_df = xtab[['attribute_name', 'attribute_value']+[col for col in xtab.columns if col in absolute_metrics]].round(4)
     abs_gpo = xtab[['attribute_name', 'attribute_value']+[col for col in xtab.columns if col in absolute_metrics]].round(4)
+
 
     #Bias
     bias = Bias()
@@ -96,10 +108,15 @@ def fun_bias_fair ():
     fairness_df = fdf.copy()
     gof = fair.get_overall_fairness(fdf)
 
-return abs_gpo, bias_bdf, bias_maj_bdf, bias_min_bdf, fair_fdf, gaf, fdf
+    tab_bias_fair=fair_fdf[['attribute_name','attribute_value','for','fnr','for_disparity','fnr_disparity','FOR Parity','FNR Parity']]
 
 
+    print(tab_bias_fair)
 
 
+    return tab_bias_fair
+
+if __name__=="__main__":
+    fun_bias_fair()
 
 
