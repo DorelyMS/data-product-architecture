@@ -14,4 +14,5 @@ create table models.entrenamiento (
  );
 
 insert into models.entrenamiento (fecha_ejecucion, date_ing, registros, nombre, hiperparametros, score, rank, modelo)
-values (null, null, null, null, null, null, null, null)
+values (CURRENT_DATE, null, null, null, null, 0, null, null)
+

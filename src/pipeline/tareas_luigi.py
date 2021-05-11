@@ -1329,6 +1329,7 @@ class SeleccionMetaTask(CopyToTable):
 
         query = """
 		select hiperparametros from models.entrenamiento
+		where hiperparametros IS NOT NULL
 		order by score desc, fecha_ejecucion desc
 		limit 1
 		"""
