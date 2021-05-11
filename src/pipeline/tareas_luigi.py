@@ -1399,7 +1399,8 @@ class BiasFairnessTask(CopyToTable):
         ("for_disparity", "double precision"),
         ("fnr_disparity", "double precision"),
         ("for_parity", "boolean"),
-        ("fnr_parity", "boolean")
+        ("fnr_parity", "boolean"),
+        ("date_ing", "date")
     ]
 
     def requires(self):
@@ -1442,6 +1443,7 @@ class BiasFairnessTask(CopyToTable):
         model = pickle.loads(model)
 
         df = fun_bias_fair(a_zip, a_type, fea_eng, model)
+        df['date_ing'] = self.date_ing
 
         cursor = conn.cursor()
         # cursor.execute("drop table if exists models.bias_fairness;")
