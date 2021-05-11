@@ -187,6 +187,9 @@ A continuación añadimos el listado con los nombres de todas las tareas disponi
 | IngMetaTask    |  Genera metadatos asociados a ingesta   | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi IngMetaTask --date-ing 2021-04-28 --type-ing consecutive     |
 | TestIngTask    |  Verifica que el número de columnas de la base ingestada sea 17      | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TestIngTask --date-ing 2021-04-28 --type-ing consecutive     |
 | IngTask    |  Genera la ingesta de datos       | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi IngTask --date-ing 2021-04-28 --type-ing consecutive     |
+| BiasFairnessTask    |  Construye tabla de sesgo e inequidad | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi BiasFairnessTask --date-ing 2021-04-28 --type-ing consecutive |
+| TestBiasFairnessTask    |  Checa que la tabla de sesgo e inequidad exista | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TestBiasFairnessTask --date-ing 2021-04-28 --type-ing consecutive |
+| BiasFairnessTask    |  Genera metadatos asociados a sesgo e inequidad | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi BiasFairnessMetaTask --date-ing 2021-04-28 --type-ing consecutive |
 
 Finalmente, es posible acceder a nuestra base "food" introduciendo el siguiente comando:
 
