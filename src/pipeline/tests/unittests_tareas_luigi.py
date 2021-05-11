@@ -132,7 +132,7 @@ class test_bias_fairness(marbles.core.TestCase):
         self.df = df
 
     def test_num_columns(self):
-        self.assertEqual(self.df.shape[1], 8, note="El número de columnas de la base de Bias Fairness (RDS) debe ser 8")
+        self.assertEqual(self.df.shape[1], 9, note="El número de columnas de la base de Bias Fairness (RDS) debe ser 8")
 
     def test_base_no_vacia(self):
         self.assertNotEqual(self.df.shape[0], 0, note="El número de renglones de la base de Bias Fairness (RDS) es cero (está vacía)")
