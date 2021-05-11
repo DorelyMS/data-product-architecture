@@ -25,7 +25,7 @@ def magic_loop(X_train,y_train, cols, date_ing):
                         'max_depth': [1, 5],
                         'max_features': ['sqrt', 'log2'],
                         'min_samples_split': [2, 5],
-                        'min_samples_leaf': [1, 2]}
+                        'min_samples_leaf': [1, 2, 4]}
     grid_search1 = GridSearchCV(classifier, 
                            hyper_param_grid, 
                            scoring = 'precision',
