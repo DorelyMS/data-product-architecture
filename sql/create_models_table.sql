@@ -12,3 +12,6 @@ create table models.entrenamiento (
 	"rank" integer,
 	"modelo" bytea
  );
+
+insert into models.entrenamiento (fecha_ejecucion, date_ing, registros, nombre, hiperparametros, score, rank, modelo)
+values (null, null, null, null, null, null, null, null)
