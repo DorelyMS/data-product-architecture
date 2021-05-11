@@ -39,11 +39,14 @@ from src.utils.luigi_extras import PostgresQueryPickle
 
 # Funciones importadas de data-product-architecture/src/pipeline/tests/unittest_tareas_luigi.py
 # para realizar pruebas unitarias en todas las task de luigi
-from src.pipeline.tests.unittests_tareas_luigi import test_ing, test_alm, test_prep, test_feateng, test_train, test_seleccion
+from src.pipeline.tests.unittests_tareas_luigi import test_ing, test_alm, test_prep, test_feateng, test_train, test_seleccion, test_bias_fairness
 
 # Constantes importadas de data-product-architecture/src/utils/constants.py
 # para que el usuario ingrese sus propias credenciales, bucket de s3
 from src.utils.constants import NOMBRE_BUCKET, FOOD_CONECTION, ID_SOCRATA, PATH_CREDENCIALES
+
+
+from src.utils.bias_fairness import fun_bias_fair
 
 
 class IngTask(luigi.Task):
@@ -1347,6 +1350,226 @@ class SeleccionMetaTask(CopyToTable):
         }
 
         print("Seleccion metadata")
+        print(self.fecha_ejecucion)
+        print(self.tarea)
+        print(metadata)
+
+        r = [
+            (self.fecha_ejecucion, self.tarea, self.user, json.dumps(metadata))
+        ]
+        for element in r:
+            yield element
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class BiasFairnessTask(CopyToTable):
+    """
+    Clase de Luigi que se encarga de Bias Fairness
+    """
+    bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
+    type_ing = luigi.Parameter(default='consecutive')
+    date_ing = luigi.DateParameter(default=datetime.date.today())
+
+    # Para conectarse a la base
+    creds = general.get_db_credentials(PATH_CREDENCIALES)
+    user = creds['user']
+    password = creds['password']
+    database = creds['database']
+    host = creds['host']
+    port = creds['port']
+    table = 'models.bias_fairness'
+
+    columns = [
+        ("attribute_name", "text"),
+        ("group_name", "text"),
+        ("for_", "double precision"),
+        ("fnr", "double precision"),
+        ("for_disparity", "double precision"),
+        ("fnr_disparity", "double precision"),
+        ("for_parity", "boolean"),
+        ("fnr_parity", "boolean")
+    ]
+
+    def requires(self):
+        return SeleccionMetaTask(bucket_name=self.bucket_name,
+                            type_ing=self.type_ing,
+                            date_ing=self.date_ing)
+
+    def rows(self):
+        conn = psycopg2.connect(dbname=self.database,
+                                user=self.user,
+                                host=self.host,
+                                password=self.password)
+
+        a_zip = pd.read_sql_query("select zip, zone from clean.zip_zones;", con=conn)
+        a_type = pd.read_sql_query("select * from clean.facility_group;", con=conn)
+        fea_eng = pd.read_sql_query("select * from clean.feature_eng;", con=conn)
+
+
+
+        aux_path = 'modelos/modelo_seleccionado/'
+        output_path = 's3://' + NOMBRE_BUCKET + "/" + aux_path
+
+        s3_creds = general.get_s3_credentials(PATH_CREDENCIALES)
+        client = luigi.contrib.s3.S3Client(
+            aws_access_key_id=s3_creds['aws_access_key_id'],
+            aws_secret_access_key=s3_creds['aws_secret_access_key'])
+        gen = client.list(output_path)
+        file_name = next(gen)
+
+        session = boto3.session.Session(region_name='us-west-2')
+        s3client = session.client('s3', config=boto3.session.Config(signature_version='s3v4'),
+                                  aws_access_key_id=s3_creds['aws_access_key_id'],
+                                  aws_secret_access_key=s3_creds['aws_secret_access_key'])
+
+        path_s3 = aux_path + file_name
+
+        response = s3client.get_object(Bucket=NOMBRE_BUCKET, Key=path_s3)
+        body_string = response['Body'].read()
+        model = pickle.loads(body_string)
+        model = pickle.loads(model)
+
+        df = fun_bias_fair(a_zip, a_type, fea_eng, model)
+
+        cursor = conn.cursor()
+        # cursor.execute("drop table if exists models.bias_fairness;")
+        conn.commit()
+        conn.close()
+
+        for r in df.itertuples():
+            res = r[1:]
+            yield res
+
+
+class TestBiasFairnessTask(CopyToTable):
+    """
+    Clase de Luigi que genera test de BiasFairness
+    """
+
+    fecha_ejecucion = datetime.datetime.now()
+    tarea = "Test_BiasFairness"
+    bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
+    type_ing = luigi.Parameter(default='consecutive')
+    date_ing = luigi.DateParameter(default=datetime.date.today())
+
+    creds = general.get_db_credentials(PATH_CREDENCIALES)
+    # Parametros requeridos por la task de luigi (CopyToTable)
+    # para subir los registros del método rows a RDS
+    user = creds['user']
+    password = creds['password']
+    database = creds['database']
+    host = creds['host']
+    port = creds['port']
+    # Tabla donde enviaremos resultados de este task (si pasa todas las pruebas)
+    table = 'meta.food_metadata'
+    columns = [
+      ("fecha_ejecucion", "timestamp"),
+      ("tarea", "text"),
+      ("usuario", "text"),
+      ("metadata", "jsonb")
+    ]
+    # Tabla/base que leeremos para hacer pruebas unitarias
+    table_base = 'models.bias_fairness'
+
+    def requires(self):
+        return BiasFairnessTask(date_ing=self.date_ing,
+                     type_ing=self.type_ing,
+                     bucket_name=self.bucket_name)
+
+    def rows(self):
+        # Guardamos en un string el query con el que obtendremos todos
+        # los datos de la base
+        query = "SELECT * FROM " + self.table_base + ";"
+
+        try:
+            # Se hace la conexión con los servicios de RDS de donde
+            # obtendremos la base y la guardamos en un dataframe
+            conn = psycopg2.connect(dbname=self.database,
+                                    user=self.user,
+                                    host=self.host,
+                                    password=self.password)
+            df = pd.read_sql_query(query, con=conn)
+
+        except:
+            print("No existe el archivo de RDS:", self.table_base)
+            raise Exception()
+
+        pruebas = test_bias_fairness(df=df)
+        resultados = pruebas()
+        if len(resultados.failures) >0:
+            for failure in resultados.failures:
+                print(failure)
+            raise Exception("Falló pruebas unitarias Bias Fairness")
+
+        # Si no hubo errores se procede a subir la info de este Task de unittest a RDS
+        metadata = {'type_ing': self.type_ing,
+                    'date_ing': self.date_ing.strftime("%Y-%m-%d"),
+                    'date_inic': (self.date_ing - datetime.timedelta(days=6)).strftime("%Y-%m-%d"),
+                    'test_results': 'No error unittest: ' + ','.join([i for i in dir(test_bias_fairness) if i.startswith('test_')])
+                    }
+        print("Test Bias Fairness metadata")
+        print(self.fecha_ejecucion)
+        print(self.tarea)
+        print(metadata)
+
+        r = [(self.fecha_ejecucion, self.tarea, self.user, json.dumps(metadata))]
+        for element in r:
+            yield element
+
+
+class BiasFairnessMetaTask(CopyToTable):
+    """
+    Clase de Luigi que guarda los metadatos de Bias Fairness
+    """
+
+    bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
+    type_ing = luigi.Parameter(default='consecutive')
+    date_ing = luigi.DateParameter(default=datetime.date.today())
+
+    fecha_ejecucion = datetime.datetime.now()
+    tarea = "Bias_Fairness"
+
+    creds = general.get_db_credentials(PATH_CREDENCIALES)
+
+    user = creds['user']
+    password = creds['password']
+    database = creds['database']
+    host = creds['host']
+    port = creds['port']
+    table = 'meta.food_metadata'
+
+    columns = [
+        ("fecha_ejecucion", "timestamp"),
+        ("tarea", "text"),
+        ("usuario", "text"),
+        ("metadata", "jsonb")
+    ]
+
+    def requires(self):
+        return TestBiasFairnessTask(bucket_name=self.bucket_name,
+                           type_ing=self.type_ing,
+                           date_ing=self.date_ing)
+
+    def rows(self):
+        metadata = {
+            'type_ing': self.type_ing,
+            'date_ing': self.date_ing.strftime("%Y-%m-%d"),
+            'date_inic': (self.date_ing - datetime.timedelta(days=6)).strftime("%Y-%m-%d"),
+        }
+
+        print("Feature Bias Fairness")
         print(self.fecha_ejecucion)
         print(self.tarea)
         print(metadata)

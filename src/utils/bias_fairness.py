@@ -7,8 +7,7 @@ from src.utils.constants import NOMBRE_BUCKET, ID_SOCRATA, PATH_CREDENCIALES
 
 import luigi.contrib.s3
 
-
-def fun_bias_fair():
+def auxiliar():
 
     creds = general.get_db_credentials(PATH_CREDENCIALES)
     user = creds['user']
@@ -50,9 +49,14 @@ def fun_bias_fair():
     fea_eng = pd.read_sql_query("select * from clean.feature_eng;", con=conn)
     conn.close()
 
+    fun_bias_fair(a_zip, a_type, fea_eng, model)
+
+
+
+def fun_bias_fair(a_zip, a_type, fea_eng, model):
+
     X = fea_eng.drop(['aka_name', 'facility_type', 'address', 'inspection_date', 'inspection_type', 'violations', 'results', 'pass'], axis=1)
     y_pred = model.predict(X)
-
 
     xt = pd.DataFrame([fea_eng['zip'].astype(float), fea_eng['facility_type'], fea_eng['pass'], y_pred]).transpose()
     a_zip['zip']=a_zip['zip'].astype(float)
@@ -66,7 +70,6 @@ def fun_bias_fair():
     compas['zone'] = compas['zone'].astype(str)
     compas['score'] = compas['score'].astype(int)
     compas['label_value'] = compas['label_value'].astype(int)
-    #print(compas.isnull().sum())
 
     from aequitas.group import Group
     from aequitas.bias import Bias
@@ -106,14 +109,16 @@ def fun_bias_fair():
     gof = fair.get_overall_fairness(fdf)
 
     tab_bias_fair=fair_fdf[['attribute_name','attribute_value','for','fnr','for_disparity','fnr_disparity','FOR Parity','FNR Parity']]
-
+    tab_bias_fair.rename(
+        columns={'attribute_value': 'group_name', 'FOR Parity': 'for_parity', 'FNR Parity': 'fnr_parity', 'for':'for_'}, inplace=True)
 
     print(tab_bias_fair)
-
 
     return tab_bias_fair
 
 if __name__=="__main__":
-    fun_bias_fair()
+    # fun_bias_fair()
+    auxiliar()
+
 
 

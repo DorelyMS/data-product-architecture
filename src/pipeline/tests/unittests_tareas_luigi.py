@@ -118,3 +118,25 @@ class test_seleccion(marbles.core.TestCase):
 
     def runTest(self):
         self.test_tipo_modelo_arbol()
+
+
+class test_bias_fairness(marbles.core.TestCase):
+    """
+        Clase con pruebas de Task Trainning usando marbles:
+        1.- Probar que el pickle tiene las 8 columnas
+        2.- Probar que el pickle tiene cuando menos un registro
+    """
+
+    def __init__(self, df):
+        super(test_bias_fairness, self).__init__()
+        self.df = df
+
+    def test_num_columns(self):
+        self.assertEqual(self.df.shape[1], 8, note="El número de columnas de la base de Bias Fairness (RDS) debe ser 8")
+
+    def test_base_no_vacia(self):
+        self.assertNotEqual(self.df.shape[0], 0, note="El número de renglones de la base de Bias Fairness (RDS) es cero (está vacía)")
+
+    def runTest(self):
+        self.test_num_columns()
+        self.test_base_no_vacia()
