@@ -63,6 +63,7 @@ El pipeline diseñado para el proyecto hasta el momento incluye las siguientes e
 * **Load**: Los datos se cargan (Task de Almacenamiento) en un bucket de S3 en AWS en formato .pkl.
 * **Transform**: Se aplican tareas de Cleaning & Preprocessing y Feature Engineering para obtener las columnas que el modelo requerirá. Las tablas corresponientes así como los metadatos asociados a cada una de las tarea se cargan en RDS.
 * **Modelado**: Se realiza una extracción de una muestra de los datos con el propósito de realizar el modelado sobre la variable a predecir: si pasará o no la inspección (Entrenamiento o Training). Luego, mediante un magic loop, se obtiene el mejor modelo para predecir con base en la métrica seleccionada (F1 Score) a partir de los algoritmos de Decision Trees y Random Forest que cuentan con distintos hiperparámetros. El modelo seleccionado queda almacenado en un pickle en S3.
+* **Sesgo e Inequidad**: 
 
 Cabe mencionar que por cada una de las tareas o Task mencionadas, se realizaron distintas pruebas unitarias o unit test con el propósito de probar una unidad/funcionalidad de código aislada para cada verificar que cada una haga lo que esperamos que realice y evitemos arrastrar errores en las tareas subsecuentes.
 
@@ -152,10 +153,10 @@ luigid
 * Para la ejecución de nuestro pipeline hasta el momento, debemos ejecutar el siquiente comando:
  
 ```bash
-PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi SeleccionMetaTask --date-ing 2021-04-28 --type-ing consecutive
+PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi BiasFairnessMetaTask --date-ing 2021-04-28 --type-ing consecutive
 ```
 
-Dicho comando aplica todo el Pipeline hasta generar los metadatos asociados al Feature Engineering para obtener las columnas que el modelo requerirá. Las tablas corresponientes se cargan en RDS como se mencionó previamente. Cabe señalar que la clase de Luigi *SeleccionMetaTask* debe recibir como parámetros: 
+Dicho comando ejecuta la tarea correspondiente al último nodo de nuestro DAG, por lo que en forma retrospectiva ejecuta cada una de las tareas (tasks) del Pipeline, hasta generar los metadatos asociados al Bias Fairness. A lo largo del proceso construido con las tareas de luigi se generan tablas/bases que se guardan ya sea en local (respaldos de las descargas de la API de Chicago Foods), S3 (tanto las descargas de la API de Chicago Foods como el mejor modelo seleccionado), o bien en RDS (la mayoría de las tablas). Cabe señalar que la clase de Luigi *BiasFairnessMetaTask* debe recibir como parámetros: 
 
     - nombre del bucket (en nuestro caso el default es: data-product-architecture-4) donde se desea guardar el archivo con los datos históricos en formato .pkl
     - la fecha de ejecución en formato 'YYYY-MM-DD' (la cual indica el día de corte hasta donde se descargarán los datos, donde el default la fecha del día en que se ejecuta)
@@ -163,7 +164,7 @@ Dicho comando aplica todo el Pipeline hasta generar los metadatos asociados al F
 
 Una vez ejecutada esta instrucción, puedes abrir un browser y escribir *localhost:8082/* para ver el DAG con los tasks.
 
-Como vemos, para Luigi no es necesario correr los tasks previos de forma individual, sino que es posible correr directamente el task para generar los metadatos de Feature Engineering para que éste ejecute el task de Feature Engineering, el de los Metadatos asociados a la Limpieza y Procesamiento y así sucesivamente con los parámetros especificados. Lo anterior se debe a que en Luigi los pipelines se diseñan iniciando con la última tarea en ejecutarse, pues su diseño incluye obtener los elementos requeridos para ejecutar una tarea, si estos no han sido satisfechos entonces ejecutará antes las tareas que se requieren.
+Como vemos, para Luigi no es necesario correr los tasks previos de forma individual, ya que cada task tiene asociado una tarea que le precede, y en caso de que se detecte que ésta no ha sido ejecutada, primero correrá dicha tarea y luego la solicitada, y de esa forma es posible correr todo el proceso ejecutando únicamente el último task, que actualmente corresponde a BiasFairnessMetaTask. En Luigi los pipelines se diseñan de tal forma que para correr todo el proceso se ejecuta la última tarea o task, y en forma recursiva y retroactiva ejecutará todas las tareas que le precedan requeridas para llegar al resultado del último task.
 
 A continuación añadimos el listado con los nombres de todas las tareas disponibles en nuestro pipeline que también se pueden ejecutar de forma individual así como la descripción y un ejemplo de cómo ejecutarla:
 
@@ -203,7 +204,7 @@ Y luego ejecutar el siguiente comando para poder ver los esquemas asociados a la
 set search_path=clean,meta,models,public;
 ```
 
-#### 9. DAG con las tasks del Checkpoint 5 en verde
+#### 9. DAG con las tasks del Checkpoint 6 en verde
 
 Una vez ejecutado los comandos anteriores, se presenta como ejemplo una captura de nuestro DAG con todos los tasks en "Done".
 
