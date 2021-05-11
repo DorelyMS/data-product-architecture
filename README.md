@@ -207,7 +207,7 @@ set search_path=clean,meta,models,public;
 
 Una vez ejecutado los comandos anteriores, se presenta como ejemplo una captura de nuestro DAG con todos los tasks en "Done".
 
-<img src="https://www.dropbox.com/s/nsd52w3ij8aqvm8/Tast_status.jpg?dl=0" heigth="500" width="1500">
+<img src="https://dl.dropboxusercontent.com/s/nsd52w3ij8aqvm8/Tast_status.jpg?dl=0" heigth="500" width="1500">
 
 ## 10. Estructura básica del proyecto
 
