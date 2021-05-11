@@ -21,11 +21,6 @@ def split_tiempo(archivo,campo_criterio,criterio):
 def magic_loop(X_train,y_train, cols, date_ing):
     #for i in range(0,len(modelos_to_run)):
     classifier = RandomForestClassifier()
-    # hyper_param_grid= {'n_estimators': [100,500,800],
-    #                 'max_depth': [1,5,10,50],
-    #                 'max_features': ['sqrt','log2'],
-    #                 'min_samples_split': [2,5,10],
-    #                 'min_samples_leaf':[1,2,4]}
     hyper_param_grid = {'n_estimators': [100],
                         'max_depth': [1, 5],
                         'max_features': ['sqrt', 'log2'],
@@ -33,8 +28,7 @@ def magic_loop(X_train,y_train, cols, date_ing):
                         'min_samples_leaf': [1, 2]}
     grid_search1 = GridSearchCV(classifier, 
                            hyper_param_grid, 
-                           scoring = 'f1',
-#                            cv = cv, 
+                           scoring = 'precision',
                            n_jobs = -1,
                            verbose = 3)
     grid_search1.fit(X_train, y_train)
@@ -59,8 +53,7 @@ def magic_loop(X_train,y_train, cols, date_ing):
     
                                
 #     results_1 = cv_results.sort_values(by='rank_test_score', ascending=True)
-    
-       
+          
         
 #     classifier = tree.DecisionTreeClassifier()
 #     hyper_param_grid= {'max_depth': [3,5,10,25],
