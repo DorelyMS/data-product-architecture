@@ -4,14 +4,14 @@ Este es el repositorio del Proyecto Final para la materia de Arquitectura de Pro
 
 ## Contenido
 
-1. [Introducción](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#1-introducci%C3%B3n)
-2. [Summary](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#2-summary-de-los-datos-para-eda-actualizado-al-15-de-enero-2021)
-3. [Pregunta analítica](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#3-pregunta-anal%C3%ADtica)
-4. [Frecuencia de actualización de los datos](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#4-frecuencia-de-actualizaci%C3%B3n-de-los-datos)
-5. [Overview_Pipeline](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#5-overview-pipeline)
-6. [Sobre el Modelado y Bias Fairness]
-7. [Requerimientos_de_Infraestructura](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#6-requerimientos-de-infraestructura)
-8. [Instalación_y_configuración](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#7-instalaci%C3%B3n-y-configuraci%C3%B3n)
+1. [Introducción](https://github.com/DorelyMS/data-product-architecture#1-introducci%C3%B3n)
+2. [Summary](https://github.com/DorelyMS/data-product-architecture#2-summary-de-los-datos-para-eda-actualizado-al-15-de-enero-2021)
+3. [Pregunta analítica](https://github.com/DorelyMS/data-product-architecture#3-pregunta-anal%C3%ADtica)
+4. [Frecuencia de actualización de los datos](https://github.com/DorelyMS/data-product-architecture#4-frecuencia-de-actualizaci%C3%B3n-de-los-datos)
+5. [Overview_Pipeline](https://github.com/DorelyMS/data-product-architecture#5-overview-pipeline)
+6. [Sobre el Modelado y Bias Fairness](https://github.com/DorelyMS/data-product-architecture#6-sobre-el-modelado-y-bias-fairness)
+7. [Requerimientos_de_Infraestructura](https://github.com/DorelyMS/data-product-architecture#7-requerimientos-de-infraestructura)
+8. [Instalación_y_configuración](https://github.com/DorelyMS/data-product-architecture#7-instalaci%C3%B3n-y-configuraci%C3%B3n)
 9. [Ejecución](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#8-ejecuci%C3%B3n)
 10. [DAG con tasks Checkpoint 5](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#9-dag-con-las-tasks-del-checkpoint-4-en-verde)
 11. [Estructura básica del proyecto](https://github.com/DorelyMS/data-product-architecture#estructura-básica-del-proyecto)
@@ -147,7 +147,7 @@ db:
 ```
 
 
-## 8. Ejecución
+## 9. Ejecución
 
 ## Proceso de Ejecución del pipeline diseñado para el proyecto hasta el momento
 
@@ -221,13 +221,13 @@ Y luego ejecutar el siguiente comando para poder ver los esquemas asociados a la
 set search_path=clean,meta,models,public;
 ```
 
-#### 9. DAG con las tasks del Checkpoint 6 en verde
+#### 10. DAG con las tasks del Checkpoint 6 en verde
 
 Una vez ejecutado los comandos anteriores, se presenta como ejemplo una captura de nuestro DAG con todos los tasks en "Done".
 
 <img src="https://dl.dropboxusercontent.com/s/nsd52w3ij8aqvm8/Tast_status.jpg?dl=0" heigth="500" width="1500">
 
-## 10. Estructura básica del proyecto
+## 11. Estructura básica del proyecto
 
 ```bash
 ├── README.md             <- The top-level README for developers using this project.
