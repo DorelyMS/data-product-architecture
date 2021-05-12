@@ -12,9 +12,9 @@ Este es el repositorio del Proyecto Final para la materia de Arquitectura de Pro
 6. [Sobre el Modelado y Bias Fairness](https://github.com/DorelyMS/data-product-architecture#6-sobre-el-modelado-y-bias-fairness)
 7. [Requerimientos_de_Infraestructura](https://github.com/DorelyMS/data-product-architecture#7-requerimientos-de-infraestructura)
 8. [Instalación_y_configuración](https://github.com/DorelyMS/data-product-architecture#7-instalaci%C3%B3n-y-configuraci%C3%B3n)
-9. [Ejecución](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#8-ejecuci%C3%B3n)
-10. [DAG con tasks Checkpoint 5](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#9-dag-con-las-tasks-del-checkpoint-4-en-verde)
-11. [Estructura básica del proyecto](https://github.com/DorelyMS/data-product-architecture#estructura-básica-del-proyecto)
+9. [Ejecución](https://github.com/DorelyMS/data-product-architecture#9-ejecuci%C3%B3n)
+10. [DAG con tasks Checkpoint 5](https://github.com/DorelyMS/data-product-architecture#10-dag-con-las-tasks-del-checkpoint-6-en-verde)
+11. [Estructura básica del proyecto](https://github.com/DorelyMS/data-product-architecture#11-estructura-b%C3%A1sica-del-proyecto)
 12. [Integrantes del equipo](https://github.com/DorelyMS/data-product-architecture#integrantes-del-equipo)
 
 ## 1. Introducción
@@ -74,13 +74,13 @@ A continuación, respondemos algunas preguntas que nos proporcionan más context
 
 * ¿Tu modelo es punitivo o asistivo? ¿por qué?
 - Se consideró que nuestro modelo es de tipo asistivo, pues el uso del modelo está pensado para ayudar al establecimiento con una predicción de si pasará o no una inspección. Esto le brindará información valiosa a la empresa indpendientemente de si se estima que pasará o no una próxima inspección, es decir, es un modelo del estilo preventivo. 
-- 
+
 * ¿Cuáles son los atributos protegidos?
 - Tomamos como atributos protegidos **zone** y **facility group**. Que como mencionamos previamente, son variables que fueron generadas a partir de una agrupación de las variables de zip code y facility type respectivamente a partir de los catálogos que viven en RDS (tablas: zip_zones y facilite_group en el esquema clean)
-- 
+
 * ¿Qué grupos de referencia tiene cada atributo protegido?, explica el por qué
 -  El grupo de referencia dentro del atributo **zone** es 'West' y dentro del atributo **facility group** es 'grocery'. Para definir qué grupo de referencia seleccionamos en cada atributo, se calculó el FNR y así el grupo que consistentemente mostró un nivel relativamente bajo de FNR (más favorecido) fue el escogido para ayudarnos a verificar que tan alejados estaban los demás grupos.
--  
+
 * ¿Qué métricas cuantificas/ocupas en sesgo e inequidad? explica por qué
 - Debido a nuestro **enfoque asistivo**, calculamos las métricas de **False Omission Rate (FOR)** y **False Negative Rate (FNR)**. FOR se utiliza cuando nos interesa conocer si hay un sesgo hacia algún grupo de no ser seleccionado como etiqueta positiva (1, que significa que sí pasó la inspección), por lo que se busca tener paridad entre los FNR de todos los grupos con respecto al atributo "protegido" asociado a los modelos asistivos, de tal forma que ambas métricas van de la mano con nuestro enfoque.
 
@@ -118,7 +118,7 @@ Infraestructura: AWS
   + Storage: 100 GB
 ```
 
-## 7. Instalación y configuración
+## 8. Instalación y configuración
 
 Para poder interactuar con este repositorio, debes clonar la rama main para hacer una copia local del repo en tu máquina. Es necesario crear un pyenv-virtualenv con la versión de **Python 3.8.6**, activarlo e instalar los **requirements.txt** ejecutando el siguiente comando una vez estando dentro del ambiente virtual:
 
@@ -267,7 +267,7 @@ Una vez ejecutado los comandos anteriores, se presenta como ejemplo una captura 
 Figura 1. Estructura básica del proyecto.
 
 
-## 11. Integrantes del equipo
+## 12. Integrantes del equipo
 
 En la siguiente tabla se encuentran los integrantes del equipo:
 
