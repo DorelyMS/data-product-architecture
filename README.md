@@ -9,12 +9,13 @@ Este es el repositorio del Proyecto Final para la materia de Arquitectura de Pro
 3. [Pregunta analítica](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#3-pregunta-anal%C3%ADtica)
 4. [Frecuencia de actualización de los datos](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#4-frecuencia-de-actualizaci%C3%B3n-de-los-datos)
 5. [Overview_Pipeline](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#5-overview-pipeline)
-6. [Requerimientos_de_Infraestructura](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#6-requerimientos-de-infraestructura)
-7. [Instalación_y_configuración](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#7-instalaci%C3%B3n-y-configuraci%C3%B3n)
-8. [Ejecución](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#8-ejecuci%C3%B3n)
-9. [DAG con tasks Checkpoint 5](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#9-dag-con-las-tasks-del-checkpoint-4-en-verde)
-10. [Estructura básica del proyecto](https://github.com/DorelyMS/data-product-architecture#estructura-básica-del-proyecto)
-11. [Integrantes del equipo](https://github.com/DorelyMS/data-product-architecture#integrantes-del-equipo)
+6. [Sobre el Modelado y Bias Fairness]
+7. [Requerimientos_de_Infraestructura](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#6-requerimientos-de-infraestructura)
+8. [Instalación_y_configuración](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#7-instalaci%C3%B3n-y-configuraci%C3%B3n)
+9. [Ejecución](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#8-ejecuci%C3%B3n)
+10. [DAG con tasks Checkpoint 5](https://github.com/DorelyMS/data-product-architecture/tree/Dorely#9-dag-con-las-tasks-del-checkpoint-4-en-verde)
+11. [Estructura básica del proyecto](https://github.com/DorelyMS/data-product-architecture#estructura-básica-del-proyecto)
+12. [Integrantes del equipo](https://github.com/DorelyMS/data-product-architecture#integrantes-del-equipo)
 
 ## 1. Introducción
 
@@ -63,12 +64,27 @@ El pipeline diseñado para el proyecto hasta el momento incluye las siguientes e
 * **Load**: Los datos se cargan (Task de Almacenamiento) en un bucket de S3 en AWS en formato .pkl.
 * **Transform**: Se aplican tareas de Cleaning & Preprocessing y Feature Engineering para obtener las columnas que el modelo requerirá. Las tablas corresponientes así como los metadatos asociados a cada una de las tarea se cargan en RDS.
 * **Modelado**: Se realiza una extracción de una muestra de los datos con el propósito de realizar el modelado sobre la variable a predecir: si pasará o no la inspección (Entrenamiento o Training). Luego, mediante un magic loop, se obtiene el mejor modelo para predecir con base en la métrica seleccionada (Precisión) a partir de los algoritmos de Decision Trees y Random Forest que cuentan con distintos hiperparámetros. El modelo seleccionado queda almacenado en un pickle en S3.
-* **Sesgo e Inequidad**: Se identifica y cuantifica los sesgos e inequedades generados por los resultados de las predicciones del modelo en los grupos conformados por las zonas sociodemográficas y tipos generales de negocios (definidos a partir de una agrupación de las variables de zip code y facility group -catálogo que vive en RDS-). Apoyados por el toolkit de "Aequitas", se considero que nuestro modelo es de tipo asistivo, pues la predicción que se informe a la empresa previo a una inspección, le brindará información valiosa a ésta indpendientemente de si se estima que pasará o no una próxima inspección, es decir, es un modelo del estilo preventivo. Para lo anterior calculamos las métricas de False Omission Rate y False Negative Rate.
-Tomamos como atributos protegido de la variable zip code  'West' y de facility group  'grocery'. Para definir qué atributo protegido elegir, se calculó la mediana de la métrica FNR para cada variable y así el atributo más cercano a ésta sería el que ayudaría a verificar que tan alejados se pueden encontrar los demás atributos de lo que se consideraría "lo normal".
+* **Sesgo e Inequidad**: Se identifica y cuantifica los sesgos e inequidades generados por los resultados de las predicciones del modelo en los grupos conformados por las zonas sociodemográficas: **zone** y tipos generales de negocios **facility_group** (definidos a partir de una agrupación de las variables de zip code y facility type -catálogo que vive en RDS-) apoyados por el toolkit de "Aequitas" (Task de Bias & Fairness)
 
 Cabe mencionar que por cada una de las tareas o Task mencionadas, se realizaron distintas pruebas unitarias o unit test con el propósito de probar una unidad/funcionalidad de código aislada para cada verificar que cada una haga lo que esperamos que realice y evitemos arrastrar errores en las tareas subsecuentes.
 
-## 6. Requerimientos de Infraestructura
+## 6. Sobre el Modelado y Bias Fairness
+
+A continuación, respondemos algunas preguntas que nos proporcionan más contexto sobre el Modelado y Sesgo e Inequidades:
+
+* ¿Tu modelo es punitivo o asistivo? ¿por qué?
+- Se consideró que nuestro modelo es de tipo asistivo, pues el uso del modelo está pensado para ayudar al establecimiento con una predicción de si pasará o no una inspección. Esto le brindará información valiosa a la empresa indpendientemente de si se estima que pasará o no una próxima inspección, es decir, es un modelo del estilo preventivo. 
+- 
+* ¿Cuáles son los atributos protegidos?
+- Tomamos como atributos protegidos **zone** y **facility group**. Que como mencionamos previamente, son variables que fueron generadas a partir de una agrupación de las variables de zip code y facility type respectivamente a partir de los catálogos que viven en RDS (tablas: zip_zones y facilite_group en el esquema clean)
+- 
+* ¿Qué grupos de referencia tiene cada atributo protegido?, explica el por qué
+-  El grupo de referencia dentro del atributo **zone** es 'West' y dentro del atributo **facility group** es 'grocery'. Para definir qué grupo de referencia seleccionamos en cada atributo, se calculó el FNR y así el grupo que consistentemente mostró un nivel relativamente bajo de FNR (más favorecido) fue el escogido para ayudarnos a verificar que tan alejados estaban los demás grupos.
+-  
+* ¿Qué métricas cuantificas/ocupas en sesgo e inequidad? explica por qué
+- Debido a nuestro **enfoque asistivo**, calculamos las métricas de **False Omission Rate (FOR)** y **False Negative Rate (FNR)**. FOR se utiliza cuando nos interesa conocer si hay un sesgo hacia algún grupo de no ser seleccionado como etiqueta positiva (1, que significa que sí pasó la inspección), por lo que se busca tener paridad entre los FNR de todos los grupos con respecto al atributo "protegido" asociado a los modelos asistivos, de tal forma que ambas métricas van de la mano con nuestro enfoque.
+
+## 7. Requerimientos de Infraestructura
 
 Los datos que se utilizan son almacenados en un bucket de Amazon [S3](https://aws.amazon.com/es/s3/). Una instancia EC2 de AWS llamada Bastión se utiliza como un filtro de seguridad el cual se conecta con otra EC2 (que se generó a partir de una imagen de la EC2 de bastión) utilizada para correr todo el código; y los resultados de cada etapa son almacenados en s3 o bien en un servicio RDS de AWS.
 
@@ -154,10 +170,10 @@ luigid
 * Para la ejecución de nuestro pipeline hasta el momento, debemos ejecutar el siquiente comando:
  
 ```bash
-PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi BiasFairnessMetaTask --date-ing 2021-04-28 --type-ing consecutive
+PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi BiasFairnessMetaTask --date-ing 2021-05-10 --type-ing consecutive
 ```
 
-Dicho comando ejecuta la tarea correspondiente al último nodo de nuestro DAG, por lo que en forma retrospectiva ejecuta cada una de las tareas (tasks) del Pipeline, hasta generar los metadatos asociados al Bias Fairness. A lo largo del proceso construido con las tareas de luigi se generan tablas/bases que se guardan ya sea en local (respaldos de las descargas de la API de Chicago Foods), S3 (tanto las descargas de la API de Chicago Foods como el mejor modelo seleccionado), o bien en RDS (la mayoría de las tablas). Cabe señalar que la clase de Luigi *BiasFairnessMetaTask* debe recibir como parámetros: 
+Dicho comando ejecuta la tarea correspondiente al último nodo de nuestro DAG, por lo que en forma retrospectiva ejecuta cada una de las tareas (tasks) del Pipeline, hasta generar los metadatos asociados al Bias & Fairness. A lo largo del proceso construido con las tareas de luigi se generan tablas/bases que se guardan ya sea en local (respaldos de las descargas de la API de Chicago Foods), S3 (tanto las descargas de la API de Chicago Foods como el mejor modelo seleccionado), o bien en RDS (la mayoría de las tablas). Cabe señalar que la clase de Luigi *BiasFairnessMetaTask* debe recibir como parámetros: 
 
     - nombre del bucket (en nuestro caso el default es: data-product-architecture-4) donde se desea guardar el archivo con los datos históricos en formato .pkl
     - la fecha de ejecución en formato 'YYYY-MM-DD' (la cual indica el día de corte hasta donde se descargarán los datos, donde el default la fecha del día en que se ejecuta)
@@ -171,8 +187,11 @@ A continuación añadimos el listado con los nombres de todas las tareas disponi
 
 | Tarea    | Descripción      | Ejemplo  de cómo correrlo  |
 | ---- | ------------ | --------- |
-| SeleccionMetaTask    |  Genera metadatos asociados a la selección del modelo        | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi SeleccionMetaTask --date-ing 2021-04-28 --type-ing consecutive     |
-| TestSeleccionTask    |  Se verifica que el mejor modelo seleccionado sea un Decision Tree (genera error si no)      | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TestSeleccionTask --date-ing 2021-04-28 --type-ing consecutive     |
+| BiasFairnessMetaTask    |  Genera metadatos asociados a sesgo e inequidad | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi BiasFairnessMetaTask --date-ing 2021-05-10 --type-ing consecutive |
+| TestBiasFairnessTask    |  Checa que la tabla de sesgo e inequidad exista y verifica que el número de columnas sea 8 | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TestBiasFairnessTask --date-ing 2021-05-10 --type-ing consecutive |
+| BiasFairnessTask    |  Construye tabla de sesgos e inequidades | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi BiasFairnessTask --date-ing 2021-05-10 --type-ing consecutive |
+| SeleccionMetaTask    |  Genera metadatos asociados a la selección del modelo        | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi SeleccionMetaTask --date-ing 2021-05-10 --type-ing consecutive     |
+| TestSeleccionTask    |  Se verifica que el mejor modelo seleccionado sea un Decision Tree (genera error si no)      | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TestSeleccionTask --date-ing 2021-05-10 --type-ing consecutive     |
 | SeleccionTask    |  Realiza selección del mejor modelo con base en la métrica F1 Score  | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi SeleccionTask --date-ing 2021-04-28 --type-ing consecutive     |
 | TrainMetaTask    |  Genera metadatos asociados a Entrenamiento      | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TrainMetaTask --date-ing 2021-04-28 --type-ing consecutive     |
 | TestTrainTask    |  Se revisa que la base no esté vacía y además cuente con 8 columnas       | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TestTrainTask --date-ing 2021-04-28 --type-ing consecutive     |
@@ -189,9 +208,6 @@ A continuación añadimos el listado con los nombres de todas las tareas disponi
 | IngMetaTask    |  Genera metadatos asociados a ingesta   | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi IngMetaTask --date-ing 2021-04-28 --type-ing consecutive     |
 | TestIngTask    |  Verifica que el número de columnas de la base ingestada sea 17      | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TestIngTask --date-ing 2021-04-28 --type-ing consecutive     |
 | IngTask    |  Genera la ingesta de datos       | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi IngTask --date-ing 2021-04-28 --type-ing consecutive     |
-| BiasFairnessTask    |  Construye tabla de sesgo e inequidad | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi BiasFairnessTask --date-ing 2021-04-28 --type-ing consecutive |
-| TestBiasFairnessTask    |  Checa que la tabla de sesgo e inequidad exista | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TestBiasFairnessTask --date-ing 2021-04-28 --type-ing consecutive |
-| BiasFairnessTask    |  Genera metadatos asociados a sesgo e inequidad | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi BiasFairnessMetaTask --date-ing 2021-04-28 --type-ing consecutive |
 
 Finalmente, es posible acceder a nuestra base "food" introduciendo el siguiente comando:
 
