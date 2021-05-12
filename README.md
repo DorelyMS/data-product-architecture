@@ -11,11 +11,11 @@ Este es el repositorio del Proyecto Final para la materia de Arquitectura de Pro
 5. [Overview_Pipeline](https://github.com/DorelyMS/data-product-architecture#5-overview-pipeline)
 6. [Sobre el Modelado y Bias Fairness](https://github.com/DorelyMS/data-product-architecture#6-sobre-el-modelado-y-bias-fairness)
 7. [Requerimientos_de_Infraestructura](https://github.com/DorelyMS/data-product-architecture#7-requerimientos-de-infraestructura)
-8. [Instalación_y_configuración](https://github.com/DorelyMS/data-product-architecture#7-instalaci%C3%B3n-y-configuraci%C3%B3n)
+8. [Instalación_y_configuración](https://github.com/DorelyMS/data-product-architecture#8-instalaci%C3%B3n-y-configuraci%C3%B3n)
 9. [Ejecución](https://github.com/DorelyMS/data-product-architecture#9-ejecuci%C3%B3n)
 10. [DAG con tasks Checkpoint 5](https://github.com/DorelyMS/data-product-architecture#10-dag-con-las-tasks-del-checkpoint-6-en-verde)
 11. [Estructura básica del proyecto](https://github.com/DorelyMS/data-product-architecture#11-estructura-b%C3%A1sica-del-proyecto)
-12. [Integrantes del equipo](https://github.com/DorelyMS/data-product-architecture#integrantes-del-equipo)
+12. [Integrantes del equipo](https://github.com/DorelyMS/data-product-architecture#12-integrantes-del-equipo)
 
 ## 1. Introducción
 
