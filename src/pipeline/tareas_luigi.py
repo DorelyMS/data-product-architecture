@@ -45,7 +45,6 @@ from src.pipeline.tests.unittests_tareas_luigi import test_ing, test_alm, test_p
 # para que el usuario ingrese sus propias credenciales, bucket de s3
 from src.utils.constants import NOMBRE_BUCKET, FOOD_CONECTION, ID_SOCRATA, PATH_CREDENCIALES
 
-
 from src.utils.bias_fairness import fun_bias_fair
 
 
@@ -71,10 +70,13 @@ class IngTask(luigi.Task):
                                                                        self.date_ing.strftime("%Y-%m-%d"))
             results = client.get_all(self.socrata_id, where=soql_query)
 
-        else:
+        elif self.type_ing == 'initial':
             init_date = '2020-01-01'
             soql_query = "inspection_date between'{}' and '{}'".format(init_date, self.date_ing.strftime("%Y-%m-%d"))
             results = client.get_all(self.socrata_id, where=soql_query)
+
+        else:
+            raise Error("Tipo de ingestion invalido")
 
         data = []
         for line in results:
@@ -86,13 +88,8 @@ class IngTask(luigi.Task):
     def output(self):
         file_name = str(self.type_ing) + '-inspections-' + str(self.date_ing) + '.pkl'
 
-        if self.type_ing == 'consecutive':
-            aux_path = 'ingestion/' + str(self.type_ing) + '/YEAR-' + str(self.date_ing)[0:4] + '/MONTH-' + str(
+        aux_path = 'ingestion/' + str(self.type_ing) + '/YEAR-' + str(self.date_ing)[0:4] + '/MONTH-' + str(
                 self.date_ing)[5:7] + '/'
-
-        else:
-            aux_path = 'ingestion/' + 'initial' + '/YEAR-' + str(self.date_ing)[0:4] + '/MONTH-' + str(self.date_ing)[
-                                                                                                   5:7] + '/'
 
         local_path = './conf/base/' + aux_path + file_name
         return luigi.local_target.LocalTarget(local_path, format=luigi.format.Nop)
@@ -133,7 +130,7 @@ class TestIngTask(CopyToTable):
         # Definimos nombres de archivos y paths apropiados para la busqueda
         # de la base
         file_name = str(self.type_ing) + '-inspections-' + str(self.date_ing) + '.pkl'
-        aux_path = 'ingestion/' + general.type_ing_aux(str(self.type_ing)) + '/YEAR-' + str(self.date_ing)[0:4] + '/MONTH-' + str(self.date_ing)[5:7] + '/'
+        aux_path = 'ingestion/' + str(self.type_ing) + '/YEAR-' + str(self.date_ing)[0:4] + '/MONTH-' + str(self.date_ing)[5:7] + '/'
         local_path = './conf/base/' + aux_path + file_name
         # Intentamos leer la base y en caso de que no se encuentre se interrumpe
         # la ejecución del task, impidiendo así que el siguiente Task
@@ -333,7 +330,7 @@ class TestAlmTask(CopyToTable):
 
         # definimos nombres y paths apropiados
         file_name = str(self.type_ing) + '-inspections-' + str(self.date_ing) + '.pkl'
-        aux_path = 'ingestion/' + general.type_ing_aux(str(self.type_ing)) + '/YEAR-' + str(self.date_ing)[0:4] + '/MONTH-' + str(self.date_ing)[5:7] + '/'
+        aux_path = 'ingestion/' + str(self.type_ing) + '/YEAR-' + str(self.date_ing)[0:4] + '/MONTH-' + str(self.date_ing)[5:7] + '/'
         # A diferencia de otros Task, aquí no obtendremos local_path ni output_path,
         # sino un path conveniente para la función que usamos para leer de s3
         # (ligeramente diferente)
@@ -491,7 +488,6 @@ class PrepTask(CopyToTable):
     table = 'clean.clean_food_data'
 
     columns = [("inspection_id", "integer"),
-               # ("dba_name", "text"),
                ("aka_name", "text"),
                ("license_", "integer"),
                ("facility_type", "text"),
@@ -713,7 +709,6 @@ class FeatEngTask(CopyToTable):
 
     columns = [
         ("inspection_id", "integer"),
-        # ("dba_name", "text"),
         ("aka_name", "text"),
         ("license_num", "integer"),
         ("facility_type", "text"),
@@ -955,12 +950,12 @@ class TrainTask(PostgresQueryPickle):
                                date_ing=self.date_ing)
 
     # Carga
-    query = "select * from clean.feature_eng where inspection_date >= '2020-11-01';"
+    query_carga = "select * from clean.feature_eng;"
     conn = psycopg2.connect(dbname=database,
                             user=user,
                             host=host,
                             password=password)
-    df = pd.read_sql_query(query, con=conn, parse_dates=['inspection_date'])
+    df = pd.read_sql_query(query_carga, con=conn, parse_dates=['inspection_date'])
     conn.close()
 
     # Guarda
@@ -1134,36 +1129,42 @@ class SeleccionTask(luigi.Task):
     host = creds['host']
     port = creds['port']
 
-    query = "select * from clean.feature_eng where inspection_date >= '2020-11-01';"
-    conn = psycopg2.connect(dbname=database,
-                            user=user,
-                            host=host,
-                            password=password)
-    df = pd.read_sql_query(query, con=conn, parse_dates=['inspection_date'])
-    cur = conn.cursor()
-    query = """
-	select hiperparametros from models.entrenamiento 
-	order by fecha_ejecucion desc, score desc
-	limit 1
-	"""
-    cur.execute(query)
-    res = cur.fetchone()
-    cur.close()
-    conn.close()
-    hiperparametros = res[0]
-
     def requires(self):
         return TrainMetaTask(bucket_name=self.bucket_name,
-                             type_ing=self.type_ing,
-                             date_ing=self.date_ing)
+                         type_ing=self.type_ing,
+                         date_ing=self.date_ing)
 
     def run(self):
-        X_train, X_test = train.split_tiempo(self.df, 'inspection_date', '2021-04-01')
+
+        # Obtenemos datos de entrenamiento
+        conn = psycopg2.connect(dbname=self.database,
+                        user=self.user,
+                        host=self.host,
+                        password=self.password)
+
+        query = "select * from clean.feature_eng;"
+        X_train = pd.read_sql_query(query, con=conn, parse_dates=['inspection_date'])
+
+        # Obtenemos hiperparámetros seleccionados
+        cur = conn.cursor()
+        query = """
+        select hiperparametros from models.entrenamiento 
+        order by fecha_ejecucion desc, score desc
+        limit 1
+        """
+        cur.execute(query)
+        res = cur.fetchone()
+        cur.close()
+        conn.close()
+        hiperparametros = res[0]
+
+        #X_train, X_test = train.split_tiempo(self.df, 'inspection_date', '2021-04-01')
         X = X_train.drop(
             ['aka_name', 'facility_type', 'address', 'inspection_date', 'inspection_type', 'violations', 'results',
              'pass'], axis=1)
         y = X_train['pass'].astype(int)
-        rfc = RandomForestClassifier(**self.hiperparametros)
+        print(hiperparametros)
+        rfc = RandomForestClassifier(**hiperparametros)
         rfc.fit(X, y)
         print(rfc)
 
@@ -1362,19 +1363,6 @@ class SeleccionMetaTask(CopyToTable):
             yield element
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 class BiasFairnessTask(CopyToTable):
     """
     Clase de Luigi que se encarga de Bias Fairness
@@ -1418,8 +1406,6 @@ class BiasFairnessTask(CopyToTable):
         a_zip = pd.read_sql_query("select zip, zone from clean.zip_zones;", con=conn)
         a_type = pd.read_sql_query("select * from clean.facility_group;", con=conn)
         fea_eng = pd.read_sql_query("select * from clean.feature_eng;", con=conn)
-
-
 
         aux_path = 'modelos/modelo_seleccionado/'
         output_path = 's3://' + NOMBRE_BUCKET + "/" + aux_path
@@ -1582,3 +1568,97 @@ class BiasFairnessMetaTask(CopyToTable):
         ]
         for element in r:
             yield element
+
+
+class PredictTask(CopyToTable):
+    """
+    Clase de Luigi que se encarga de Bias Fairness
+    """
+    bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
+    type_ing = luigi.Parameter(default='consecutive')
+    date_ing = luigi.DateParameter(default=datetime.date.today())
+
+    # Para conectarse a la base
+    creds = general.get_db_credentials(PATH_CREDENCIALES)
+    user = creds['user']
+    password = creds['password']
+    database = creds['database']
+    host = creds['host']
+    port = creds['port']
+    table = 'pred.predicciones'
+
+    columns = [
+        ("inspection_id", "integer"),
+        ("inspection_date", "date"),
+        ("fecha_ejecucion", "date"),
+        ("modelo", "text"),
+        ("score_0", "double precision"),
+        ("score_1", "double precision"),
+        ("predict", "integer"),
+        ("pass", "integer")
+    ]
+
+
+    def requires(self):
+        return FeatEngTask(bucket_name=self.bucket_name,
+            type_ing=self.type_ing,
+            date_ing=self.date_ing)
+
+    def rows(self):
+
+        if self.type_ing == 'consecutive':
+            fecha_inicial = (self.date_ing - datetime.timedelta(days=6)).strftime("%Y-%m-%d")
+        elif self.type_ing == 'initial':
+            fecha_inicial = '2020-01-01'
+        else:
+            raise Error("Tipo de ingestion invalido")
+        fecha_final =  self.date_ing.strftime("%Y-%m-%d")
+
+        ## Se obtienen los registros a predecir
+        conn = psycopg2.connect(dbname=self.database,
+                        user=self.user,
+                        host=self.host,
+                        password=self.password)
+        query = """
+        select * from clean.feature_eng
+        where inspection_date between '{fo}' and '{ff}'
+        """.format(fo = fecha_inicial, ff = fecha_final)
+        df = pd.read_sql_query(query, con=conn)
+
+        ## Se carga el modelo
+        aux_path = 'modelos/modelo_seleccionado/'
+        output_path = 's3://' + NOMBRE_BUCKET + "/" + aux_path
+
+        s3_creds = general.get_s3_credentials(PATH_CREDENCIALES)
+        client = luigi.contrib.s3.S3Client(
+            aws_access_key_id=s3_creds['aws_access_key_id'],
+            aws_secret_access_key=s3_creds['aws_secret_access_key'])
+        gen = client.list(output_path)
+        file_name = next(gen)
+
+        session = boto3.session.Session(region_name='us-west-2')
+        s3client = session.client('s3', config=boto3.session.Config(signature_version='s3v4'),
+            aws_access_key_id=s3_creds['aws_access_key_id'],
+            aws_secret_access_key=s3_creds['aws_secret_access_key'])
+        path_s3 = aux_path + file_name
+        response = s3client.get_object(Bucket=NOMBRE_BUCKET, Key=path_s3)
+        body_string = response['Body'].read()
+        model = pickle.loads(body_string)
+        model = pickle.loads(model)
+
+        ## Se generan las predicciones
+        X = df.drop(['aka_name', 'facility_type', 'address', 'inspection_date', 'inspection_type',
+         'violations', 'results','pass'], axis=1)
+        y_est = model.predict(X)
+        y_score = model.predict_proba(X)
+        res = df[['inspection_id', 'inspection_date', 'pass']]
+        res.loc[:, ['predict']] = y_est
+        res.loc[:, ['score_0', 'score_1']] = y_score
+        res.loc[:, ['modelo']] = file_name
+        res['fecha_ejecucion'] = datetime.datetime.today()
+        res = res[['inspection_id', 'inspection_date', 'fecha_ejecucion', 'modelo', 
+        'score_0', 'score_1', 'predict', 'pass']]
+
+        for r in res.itertuples():
+            line = r[1:]
+            yield line

@@ -145,3 +145,8 @@ notebooks/eda/Visualizaciones_ocultas.ipynb
 
 modelo.joblib
 
+Predict.ipynb
+Random.ipynb
+modelos_a_rds.ipynb
+rest_dic.csv
+zips.csv
