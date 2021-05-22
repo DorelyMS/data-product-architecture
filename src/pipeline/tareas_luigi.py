@@ -1589,6 +1589,7 @@ class PredictTask(CopyToTable):
 
     columns = [
         ("inspection_id", "integer"),
+        ("license_num", "integer"),
         ("inspection_date", "date"),
         ("fecha_ejecucion", "date"),
         ("modelo", "text"),
@@ -1651,13 +1652,13 @@ class PredictTask(CopyToTable):
          'violations', 'results','pass'], axis=1)
         y_est = model.predict(X)
         y_score = model.predict_proba(X)
-        res = df[['inspection_id', 'inspection_date', 'pass']]
+        res = df[['inspection_id', 'license_num', 'inspection_date', 'pass']]
         res.loc[:, ['predict']] = y_est
         res.loc[:, ['score_0', 'score_1']] = y_score
         res.loc[:, ['modelo']] = file_name
         res['fecha_ejecucion'] = datetime.datetime.today()
-        res = res[['inspection_id', 'inspection_date', 'fecha_ejecucion', 'modelo', 
-        'score_0', 'score_1', 'predict', 'pass']]
+        res = res[['inspection_id', 'license_num', 'inspection_date', 'fecha_ejecucion', 
+        'modelo', 'score_0', 'score_1', 'predict', 'pass']]
 
         for r in res.itertuples():
             line = r[1:]

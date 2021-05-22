@@ -34,13 +34,14 @@ class Match(db.Model):
 
 	# Cambiar a establecimiento
 	inspection_id = db.Column(db.Integer, primary_key = True)
+	license_num = db.Column(db.Integer)
 	inspection_date = db.Column(db.Date)
 	score_1 = db.Column(db.Float)
 	predict = db.Column(db.Integer)
 
 model_1 = api.model("match_establecimiento",
 	{
-	'inspection_id': fields.Integer,
+	'license_num': fields.Integer,
 	'score_1': fields.Float,
 	'predict': fields.Integer
 	})
@@ -67,12 +68,13 @@ class TestJson(Resource):
 	def get(self, nombre):
 		return nombre
 
-@api.route('/establecimiento/<int:inspection_id>')
+@api.route('/establecimiento/<int:license_num>')
 class ResultadoEstablecimiento(Resource):
 
 	@api.marshal_with(model_1)
-	def get(self, inspection_id):
-		match = Match.query.filter_by(inspection_id=inspection_id).all()
+	def get(self, license_num):
+		match = Match.query.filter_by(license_num=license_num).\
+		order_by(Match.inspection_id.desc()).limit(1).all()
 
 		return match #{'inspection_id': inspection_id,  'prediccion': match}
 
@@ -86,7 +88,7 @@ class ResultadoFecha(Resource):
 		inspecciones = []
 		for element in match:
 			inspecciones.append({
-				'inspection_id': element.inspection_id,
+				'license_num': element.license_num,
 				'score_1': element.score_1,
 				'predict': element.predict})
 
