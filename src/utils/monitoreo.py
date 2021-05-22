@@ -80,7 +80,9 @@ df = predictions
 #    "City": ["SF", "SF", "SF", "Montreal", "Montreal", "Montreal"]
 #})
 
-fig = px.bar(df, x="Fruit", y="Amount", color="City", barmode="group")
+fig = px.histogram(df, x='score_0', 
+                   #y="Amount", color="City", 
+                   barmode="overlay")
 
 fig.update_layout(
     plot_bgcolor=colors['background'],
@@ -90,14 +92,14 @@ fig.update_layout(
 
 app.layout = html.Div(style={'backgroundColor': colors['background']}, children=[
     html.H1(
-        children='Hello Dash',
+        children='Histograma de Scores',
         style={
             'textAlign': 'center',
             'color': colors['text']
         }
     ),
 
-    html.Div(children='Dash: A web application framework for Python.', style={
+    html.Div(children='Score_0', style={
         'textAlign': 'center',
         'color': colors['text']
     }),
