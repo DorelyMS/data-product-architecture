@@ -4,6 +4,7 @@ drop table if exists pred.predicciones;
 
 create table pred.predicciones (
 	"inspection_id"  integer,
+	"license_num" integer,
 	"inspection_date"  date,
 	"fecha_ejecucion" date,
 	"modelo" text,
