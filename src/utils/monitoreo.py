@@ -54,11 +54,10 @@ def auxiliar2():
     model = pickle.loads(model)
 
     # Conexion postgres
-    predictions = pd.read_sql_query("select score_0, score_1, predict, pass from pred.predicciones;", con=conn)
-    bias_fair = pd.read_sql_query("select * from models.bias_fairness;", con=conn)
+    predictions = pd.read_sql_query("select score_0, score_1 from pred.predicciones;", con=conn)
     conn.close()
 
-    fun_monit(predictions, bias_fair)
+    fun_monit(predictions)
 
 
 
@@ -80,7 +79,7 @@ df = predictions
 #    "City": ["SF", "SF", "SF", "Montreal", "Montreal", "Montreal"]
 #})
 
-fig = px.histogram(df, x='score_0', 
+fig = px.histogram(df, x='Scores', 
                    #y="Amount", color="City", 
                    barmode="overlay")
 
