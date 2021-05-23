@@ -39,7 +39,7 @@ from src.utils.luigi_extras import PostgresQueryPickle
 
 # Funciones importadas de data-product-architecture/src/pipeline/tests/unittest_tareas_luigi.py
 # para realizar pruebas unitarias en todas las task de luigi
-from src.pipeline.tests.unittests_tareas_luigi import test_ing, test_alm, test_prep, test_feateng, test_train, test_seleccion, test_bias_fairness
+from src.pipeline.tests.unittests_tareas_luigi import test_ing, test_alm, test_prep, test_feateng, test_train, test_seleccion, test_bias_fairness, test_predict
 
 # Constantes importadas de data-product-architecture/src/utils/constants.py
 # para que el usuario ingrese sus propias credenciales, bucket de s3
@@ -1620,6 +1620,7 @@ class PredictTask(CopyToTable):
                         user=self.user,
                         host=self.host,
                         password=self.password)
+        
         query = """
         select * from clean.feature_eng
         where inspection_date between '{fo}' and '{ff}'
@@ -1663,3 +1664,198 @@ class PredictTask(CopyToTable):
         for r in res.itertuples():
             line = r[1:]
             yield line
+
+
+
+
+
+
+class TestPredictTask(CopyToTable):
+    """
+    Clase de Luigi que genera test de Predict
+    """
+
+    fecha_ejecucion = datetime.datetime.now()
+    tarea = "Test_Predict"
+    bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
+    type_ing = luigi.Parameter(default='consecutive')
+    date_ing = luigi.DateParameter(default=datetime.date.today())
+
+    creds = general.get_db_credentials(PATH_CREDENCIALES)
+    # Parametros requeridos por la task de luigi (CopyToTable)
+    # para subir los registros del método rows a RDS
+    user = creds['user']
+    password = creds['password']
+    database = creds['database']
+    host = creds['host']
+    port = creds['port']
+    # Tabla donde enviaremos resultados de este task (si pasa todas las pruebas)
+    table = 'meta.food_metadata'
+    columns = [
+      ("fecha_ejecucion", "timestamp"),
+      ("tarea", "text"),
+      ("usuario", "text"),
+      ("metadata", "jsonb")
+    ]
+    # Tabla/base que leeremos para hacer pruebas unitarias
+    table_base = 'pred.predicciones'
+
+    def requires(self):
+        return PredictTask(date_ing=self.date_ing,
+                     type_ing=self.type_ing,
+                     bucket_name=self.bucket_name)
+
+    def rows(self):
+        # Guardamos en un string el query con el que obtendremos todos
+        # los datos de la base
+        query = "SELECT * FROM " + self.table_base + ";"
+
+        try:
+            # Se hace la conexión con los servicios de RDS de donde
+            # obtendremos la base y la guardamos en un dataframe
+            conn = psycopg2.connect(dbname=self.database,
+                                    user=self.user,
+                                    host=self.host,
+                                    password=self.password)
+            df = pd.read_sql_query(query, con=conn)
+
+        except:
+            print("No existe el archivo de RDS:", self.table_base)
+            raise Exception()
+
+        pruebas = test_predict(df=df)
+        resultados = pruebas()
+        if len(resultados.failures) >0:
+            for failure in resultados.failures:
+                print(failure)
+            raise Exception("Falló pruebas unitarias Predict")
+
+        # Si no hubo errores se procede a subir la info de este Task de unittest a RDS
+        metadata = {'type_ing': self.type_ing,
+                    'date_ing': self.date_ing.strftime("%Y-%m-%d"),
+                    'date_inic': (self.date_ing - datetime.timedelta(days=6)).strftime("%Y-%m-%d"),
+                    'test_results': 'No error unittest: ' + ','.join([i for i in dir(test_predict) if i.startswith('test_')])
+                    }
+        print("Test Predict metadata")
+        print(self.fecha_ejecucion)
+        print(self.tarea)
+        print(metadata)
+
+        r = [(self.fecha_ejecucion, self.tarea, self.user, json.dumps(metadata))]
+        for element in r:
+            yield element
+
+
+class PredictMetaTask(CopyToTable):
+    """
+    Clase de Luigi que guarda los metadatos de Predict
+    """
+
+    bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
+    type_ing = luigi.Parameter(default='consecutive')
+    date_ing = luigi.DateParameter(default=datetime.date.today())
+
+    fecha_ejecucion = datetime.datetime.now()
+    tarea = "Predict"
+
+    creds = general.get_db_credentials(PATH_CREDENCIALES)
+
+    user = creds['user']
+    password = creds['password']
+    database = creds['database']
+    host = creds['host']
+    port = creds['port']
+    table = 'meta.food_metadata'
+
+    columns = [
+        ("fecha_ejecucion", "timestamp"),
+        ("tarea", "text"),
+        ("usuario", "text"),
+        ("metadata", "jsonb")
+    ]
+
+    def requires(self):
+        return TestPredictTask(bucket_name=self.bucket_name,
+                           type_ing=self.type_ing,
+                           date_ing=self.date_ing)
+
+    def rows(self):
+        metadata = {
+            'type_ing': self.type_ing,
+            'date_ing': self.date_ing.strftime("%Y-%m-%d"),
+            'date_inic': (self.date_ing - datetime.timedelta(days=6)).strftime("%Y-%m-%d"),
+        }
+
+        print("Feature Predict")
+        print(self.fecha_ejecucion)
+        print(self.tarea)
+        print(metadata)
+
+        r = [
+            (self.fecha_ejecucion, self.tarea, self.user, json.dumps(metadata))
+        ]
+        for element in r:
+            yield element
+
+
+
+class AlmacenamientoTask(CopyToTable):
+    """
+    Clase de Luigi que se encarga de Almacenamiento
+    """
+    bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
+    type_ing = luigi.Parameter(default='consecutive')
+    date_ing = luigi.DateParameter(default=datetime.date.today())
+
+    # Para conectarse a la base
+    creds = general.get_db_credentials(PATH_CREDENCIALES)
+    user = creds['user']
+    password = creds['password']
+    database = creds['database']
+    host = creds['host']
+    port = creds['port']
+    table = 'api.scores'
+
+    columns = [
+        ("license_num", "integer"),
+        ("inspection_date", "date"),
+        ("fecha_ejecucion", "date"),
+        ("score_1", "double precision"),
+        ("predict", "integer")
+    ]
+
+
+    def requires(self):
+        return PredictMetaTask(bucket_name=self.bucket_name,
+            type_ing=self.type_ing,
+            date_ing=self.date_ing)
+
+    def rows(self):
+
+        if self.type_ing == 'consecutive':
+            fecha_inicial = (self.date_ing - datetime.timedelta(days=6)).strftime("%Y-%m-%d")
+        elif self.type_ing == 'initial':
+            fecha_inicial = '2020-01-01'
+        else:
+            raise Error("Tipo de ingestion invalido")
+        fecha_final =  self.date_ing.strftime("%Y-%m-%d")
+
+        ## Se obtienen los registros a predecir
+        conn = psycopg2.connect(dbname=self.database,
+                        user=self.user,
+                        host=self.host,
+                        password=self.password)
+        query = """
+        with score as (
+            select license_num, inspection_date, fecha_ejecucion, score_1, predict,
+            rank() over(partition by license_num order by score_1 desc) as num
+            from pred.predicciones)
+            select distinct license_num, inspection_date, fecha_ejecucion, score_1, predict from score where num=1
+        """
+        df = pd.read_sql_query(query, con=conn)
+
+        for r in df.itertuples():
+            line = r[1:]
+            yield line
+        
+

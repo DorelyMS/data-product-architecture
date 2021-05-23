@@ -140,3 +140,30 @@ class test_bias_fairness(marbles.core.TestCase):
     def runTest(self):
         self.test_num_columns()
         self.test_base_no_vacia()
+
+class test_predict(marbles.core.TestCase):
+    """
+        Clase con pruebas de Predict usando marbles:
+        1.- Probar que en pred.predicciones de RDS tiene las 9 columnas
+        2.- Probar que en pred.predicciones de RDS tiene cuando menos un registro
+    """
+
+    def __init__(self, df):
+        super(test_predict, self).__init__()
+        self.df = df
+
+    def test_num_columns(self):
+        self.assertEqual(self.df.shape[1], 9, note="El número de columnas de la base de Predict (RDS) debe ser 9")
+
+    def test_base_no_vacia(self):
+        self.assertNotEqual(self.df.shape[0], 0, note="El número de renglones de la base de Predict (RDS) es cero (está vacía)")
+
+    def runTest(self):
+        self.test_num_columns()
+        self.test_base_no_vacia()
+
+
+# https://www.mattcrampton.com/blog/a_list_of_all_python_assert_methods/
+# Para correr en terminal (dentro del directorio que contiene las pruebas)
+# python -m unittest marbles
+# Puedes agregar la bandera -v para tener más información de la corrida de las pruebas.correr como:
