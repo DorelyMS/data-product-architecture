@@ -28,13 +28,12 @@ db = SQLAlchemy(app)
 # 	return jsonify(nombre)
 
 class Match(db.Model):
-	__table_args__ = {'schema': 'pred'}
+	__table_args__ = {'schema': 'api'}
 	# Cambiar a tabla para la api, donde viene establecimiento único
-	__tablename__ = 'predicciones'
+	__tablename__ = 'scores'
 
 	# Cambiar a establecimiento
-	inspection_id = db.Column(db.Integer, primary_key = True)
-	license_num = db.Column(db.Integer)
+	license_num = db.Column(db.Integer, primary_key = True)
 	inspection_date = db.Column(db.Date)
 	score_1 = db.Column(db.Float)
 	predict = db.Column(db.Integer)
@@ -53,28 +52,27 @@ model_2 = api.model("match_fecha",
 	})
 
 
-@api.route('/')
-class HelloWorld(Resource):
-	def get(self):
-		return "Hello world!"
+#@api.route('/')
+#class HelloWorld(Resource):
+#	def get(self):
+#		return "Hello world!"
 
-@api.route('/cliente/<int:id_cliente>')
-class Cliente(Resource):
-	def get(self, id_cliente):
-		return 'El id cliente es {}'.format(id_cliente)
+#@api.route('/cliente/<int:id_cliente>')
+#class Cliente(Resource):
+#	def get(self, id_cliente):
+#		return 'El id cliente es {}'.format(id_cliente)
 
-@api.route('/test_json/<nombre>')
-class TestJson(Resource):
-	def get(self, nombre):
-		return nombre
+#@api.route('/test_json/<nombre>')
+#class TestJson(Resource):
+#	def get(self, nombre):
+#		return nombre
 
 @api.route('/establecimiento/<int:license_num>')
 class ResultadoEstablecimiento(Resource):
 
 	@api.marshal_with(model_1)
 	def get(self, license_num):
-		match = Match.query.filter_by(license_num=license_num).\
-		order_by(Match.inspection_id.desc()).limit(1).all()
+		match = Match.query.filter_by(license_num=license_num).all()
 
 		return match #{'inspection_id': inspection_id,  'prediccion': match}
 
@@ -84,7 +82,7 @@ class ResultadoFecha(Resource):
 	@api.marshal_with(model_2, as_list=True)
 	def get(self, inspection_date):
 		filter_date = datetime.strptime(inspection_date, "%Y-%m-%d").date()
-		match = Match.query.filter(Match.inspection_date==filter_date).limit(5).all()
+		match = Match.query.filter(Match.inspection_date==filter_date).limit(10).all()
 		inspecciones = []
 		for element in match:
 			inspecciones.append({
