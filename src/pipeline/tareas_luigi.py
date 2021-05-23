@@ -1570,6 +1570,90 @@ class BiasFairnessMetaTask(CopyToTable):
             yield element
 
 
+class PredictTrainTask(CopyToTable):
+    """
+    Clase de Luigi que se encarga de Bias Fairness
+    """
+    bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
+    type_ing = luigi.Parameter(default='consecutive')
+    date_ing = luigi.DateParameter(default=datetime.date.today())
+
+    # Para conectarse a la base
+    creds = general.get_db_credentials(PATH_CREDENCIALES)
+    user = creds['user']
+    password = creds['password']
+    database = creds['database']
+    host = creds['host']
+    port = creds['port']
+    table = 'models.predicciones_train'
+
+    columns = [
+        ("inspection_id", "integer"),
+        ("license_num", "integer"),
+        ("inspection_date", "date"),
+        ("fecha_ejecucion", "date"),
+        ("modelo", "text"),
+        ("score_0", "double precision"),
+        ("score_1", "double precision"),
+        ("predict", "integer"),
+        ("pass", "integer")
+    ]
+
+
+    def requires(self):
+        return BiasFairnessMetaTask(bucket_name=self.bucket_name,
+            type_ing=self.type_ing,
+            date_ing=self.date_ing)
+        
+    def rows(self):
+        ## Se obtienen los registros a predecir
+        conn = psycopg2.connect(dbname=self.database,
+                        user=self.user,
+                        host=self.host,
+                        password=self.password)
+
+        query = "select * from clean.feature_eng;"
+        df = pd.read_sql_query(query, con=conn)
+
+        ## Se carga el modelo
+        aux_path = 'modelos/modelo_seleccionado/'
+        output_path = 's3://' + NOMBRE_BUCKET + "/" + aux_path
+
+        s3_creds = general.get_s3_credentials(PATH_CREDENCIALES)
+        client = luigi.contrib.s3.S3Client(
+            aws_access_key_id=s3_creds['aws_access_key_id'],
+            aws_secret_access_key=s3_creds['aws_secret_access_key'])
+        gen = client.list(output_path)
+        file_name = next(gen)
+
+        session = boto3.session.Session(region_name='us-west-2')
+        s3client = session.client('s3', config=boto3.session.Config(signature_version='s3v4'),
+            aws_access_key_id=s3_creds['aws_access_key_id'],
+            aws_secret_access_key=s3_creds['aws_secret_access_key'])
+        path_s3 = aux_path + file_name
+        response = s3client.get_object(Bucket=NOMBRE_BUCKET, Key=path_s3)
+        body_string = response['Body'].read()
+        model = pickle.loads(body_string)
+        model = pickle.loads(model)
+
+        ## Se generan las predicciones
+        X = df.drop(['aka_name', 'facility_type', 'address', 'inspection_date', 'inspection_type',
+         'violations', 'results','pass'], axis=1)
+        y_est = model.predict(X)
+        y_score = model.predict_proba(X)
+        res = df[['inspection_id', 'license_num', 'inspection_date', 'pass']]
+        res.loc[:, ['predict']] = y_est
+        res.loc[:, ['score_0', 'score_1']] = y_score
+        res.loc[:, ['modelo']] = file_name
+        res['fecha_ejecucion'] = datetime.datetime.today()
+        res = res[['inspection_id', 'license_num', 'inspection_date', 'fecha_ejecucion', 
+        'modelo', 'score_0', 'score_1', 'predict', 'pass']]
+
+        for r in res.itertuples():
+            line = r[1:]
+            yield line
+
+
 class PredictTask(CopyToTable):
     """
     Clase de Luigi que se encarga de Bias Fairness
