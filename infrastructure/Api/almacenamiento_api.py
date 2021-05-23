@@ -17,16 +17,6 @@ api = Api(app)
 
 db = SQLAlchemy(app)
 
-# # Con parámetro
-# @app.route('/user/<string:username>')
-# def show_user_profile(username):
-#     return "Hello user {}".format(username)
-
-# # Con parametro regresa json
-# @app.route('/test_json/<string:nombre>')
-# def test_json(nombre):
-# 	return jsonify(nombre)
-
 class Match(db.Model):
 	__table_args__ = {'schema': 'api'}
 	# Cambiar a tabla para la api, donde viene establecimiento único
@@ -51,21 +41,6 @@ model_2 = api.model("match_fecha",
 	'inspecciones': fields.Nested(model_1)
 	})
 
-
-#@api.route('/')
-#class HelloWorld(Resource):
-#	def get(self):
-#		return "Hello world!"
-
-#@api.route('/cliente/<int:id_cliente>')
-#class Cliente(Resource):
-#	def get(self, id_cliente):
-#		return 'El id cliente es {}'.format(id_cliente)
-
-#@api.route('/test_json/<nombre>')
-#class TestJson(Resource):
-#	def get(self, nombre):
-#		return nombre
 
 @api.route('/establecimiento/<int:license_num>')
 class ResultadoEstablecimiento(Resource):
