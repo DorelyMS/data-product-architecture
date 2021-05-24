@@ -1916,14 +1916,6 @@ class AlmacenamientoTask(CopyToTable):
 
     def rows(self):
 
-        if self.type_ing == 'consecutive':
-            fecha_inicial = (self.date_ing - datetime.timedelta(days=6)).strftime("%Y-%m-%d")
-        elif self.type_ing == 'initial':
-            fecha_inicial = '2020-01-01'
-        else:
-            raise Error("Tipo de ingestion invalido")
-        fecha_final =  self.date_ing.strftime("%Y-%m-%d")
-
         ## Se obtienen los registros a predecir
         conn = psycopg2.connect(dbname=self.database,
                         user=self.user,
@@ -1935,6 +1927,51 @@ class AlmacenamientoTask(CopyToTable):
             rank() over(partition by license_num order by score_1 desc) as num
             from pred.predicciones)
             select distinct license_num, inspection_date, fecha_ejecucion, score_1, predict from score where num=1
+        """
+        df = pd.read_sql_query(query, con=conn)
+
+        for r in df.itertuples():
+            line = r[1:]
+            yield line
+
+class MonitoreoTask(CopyToTable):
+    """
+    Clase de Luigi que se encarga de Almacenamiento
+    """
+    bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
+    type_ing = luigi.Parameter(default='consecutive')
+    date_ing = luigi.DateParameter(default=datetime.date.today())
+
+    # Para conectarse a la base
+    creds = general.get_db_credentials(PATH_CREDENCIALES)
+    user = creds['user']
+    password = creds['password']
+    database = creds['database']
+    host = creds['host']
+    port = creds['port']
+    table = 'api.monitoreo'
+
+    columns = [
+        ("score_0", "double precision"),
+        ("score_1", "double precision")
+    ]
+
+
+    def requires(self):
+        return AlmacenamientoTask(bucket_name=self.bucket_name,
+            type_ing=self.type_ing,
+            date_ing=self.date_ing)
+
+    def rows(self):
+
+        ## Se obtienen los registros a predecir
+        conn = psycopg2.connect(dbname=self.database,
+                        user=self.user,
+                        host=self.host,
+                        password=self.password)
+        query = """
+        select score_0, score_1
+        from pred.predicciones
         """
         df = pd.read_sql_query(query, con=conn)
 
