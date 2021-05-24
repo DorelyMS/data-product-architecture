@@ -1572,7 +1572,7 @@ class BiasFairnessMetaTask(CopyToTable):
 
 class PredictTrainTask(CopyToTable):
     """
-    Clase de Luigi que se encarga de Bias Fairness
+    Clase de Luigi que se encarga de generar Predicciones para Entrenamiento
     """
     bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
     type_ing = luigi.Parameter(default='consecutive')
@@ -1656,7 +1656,7 @@ class PredictTrainTask(CopyToTable):
 
 class PredictTask(CopyToTable):
     """
-    Clase de Luigi que se encarga de Bias Fairness
+    Clase de Luigi que se encarga de generar Predicciones para nuevos datos
     """
     bucket_name = luigi.Parameter(default=NOMBRE_BUCKET)
     type_ing = luigi.Parameter(default='consecutive')
