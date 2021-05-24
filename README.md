@@ -170,29 +170,34 @@ luigid
 * Para la ejecución de nuestro pipeline hasta el momento, debemos ejecutar el siquiente comando:
  
 ```bash
-PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi BiasFairnessMetaTask --date-ing 2021-05-10 --type-ing consecutive
+PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi MonitoreoTask --date-ing 2021-05-10 --type-ing consecutive
 ```
 
-Dicho comando ejecuta la tarea correspondiente al último nodo de nuestro DAG, por lo que en forma retrospectiva ejecuta cada una de las tareas (tasks) del Pipeline, hasta generar los metadatos asociados al Bias & Fairness. A lo largo del proceso construido con las tareas de luigi se generan tablas/bases que se guardan ya sea en local (respaldos de las descargas de la API de Chicago Foods), S3 (tanto las descargas de la API de Chicago Foods como el mejor modelo seleccionado), o bien en RDS (la mayoría de las tablas). Cabe señalar que la clase de Luigi *BiasFairnessMetaTask* debe recibir como parámetros: 
+Dicho comando ejecuta la tarea correspondiente al último nodo de nuestro DAG, por lo que en forma retrospectiva ejecuta cada una de las tareas (tasks) del Pipeline, hasta generar la tabla de scores asociados al Monitoreo. A lo largo del proceso construido con las tareas de luigi se generan tablas/bases que se guardan ya sea en local (respaldos de las descargas de la API de Chicago Foods), S3 (tanto las descargas de la API de Chicago Foods como el mejor modelo seleccionado), o bien en RDS (la mayoría de las tablas). Cabe señalar que la clase de Luigi *MonitoreoTask* debe recibir como parámetros: 
 
     - nombre del bucket (en nuestro caso el default es: data-product-architecture-4) donde se desea guardar el archivo con los datos históricos en formato .pkl
     - la fecha de ejecución en formato 'YYYY-MM-DD' (la cual indica el día de corte hasta donde se descargarán los datos, donde el default la fecha del día en que se ejecuta)
-    - el tipo de ingestión deberá ser *historic*, para obtener la información desde Enero de 2010 y *consecutive* (default) para obtener una actualización de los últimos 7 días incluyendo la fecha de corte.
+    - el tipo de ingestión deberá ser *initial*, para obtener la información desde Enero de 2010 y *consecutive* (default) para obtener una actualización de los últimos 7 días incluyendo la fecha de corte.
 
 Una vez ejecutada esta instrucción, puedes abrir un browser y escribir *localhost:8082/* para ver el DAG con los tasks.
 
-Como vemos, para Luigi no es necesario correr los tasks previos de forma individual, ya que cada task tiene asociado una tarea que le precede, y en caso de que se detecte que ésta no ha sido ejecutada, primero correrá dicha tarea y luego la solicitada, y de esa forma es posible correr todo el proceso ejecutando únicamente el último task, que actualmente corresponde a BiasFairnessMetaTask. En Luigi los pipelines se diseñan de tal forma que para correr todo el proceso se ejecuta la última tarea o task, y en forma recursiva y retroactiva ejecutará todas las tareas que le precedan requeridas para llegar al resultado del último task.
+Como vemos, para Luigi no es necesario correr los tasks previos de forma individual, ya que cada task tiene asociado una tarea que le precede, y en caso de que se detecte que ésta no ha sido ejecutada, primero correrá dicha tarea y luego la solicitada, y de esa forma es posible correr todo el proceso ejecutando únicamente el último task, que corresponde a MonitoreoTask. En Luigi los pipelines se diseñan de tal forma que para correr todo el proceso se ejecuta la última tarea o task, y en forma recursiva y retroactiva ejecutará todas las tareas que le precedan requeridas para llegar al resultado del último task.
 
 A continuación añadimos el listado con los nombres de todas las tareas disponibles en nuestro pipeline que también se pueden ejecutar de forma individual así como la descripción y un ejemplo de cómo ejecutarla:
 
 | Tarea    | Descripción      | Ejemplo  de cómo correrlo  |
 | ---- | ------------ | --------- |
-| BiasFairnessMetaTask    |  Genera metadatos asociados a sesgo e inequidad | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi BiasFairnessMetaTask --date-ing 2021-05-10 --type-ing consecutive |
+| MonitoreoTask    |  Genera tabla monitoreo para Dashboard | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi MonitoreoTask --date-ing 2021-05-10 --type-ing consecutive |
+| AlmacenamientoTask    |  Genera tabla scores para API | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi AlmacenamientoTask --date-ing 2021-05-10 --type-ing consecutive |
+| PredictMetaTask    |  Genera metadatos asociados a predict | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi PredictMetaTask --date-ing 2021-05-10 --type-ing consecutive |
+| TestPredictTask    |  Revisa que la tabla de predicciones tenga al menos un registro y verifica que el número de columnas sea 9 | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TestPredictTask --date-ing 2021-05-10 --type-ing consecutive |
+| PredictTask   |  Genera tabla de predicciones para nuevos datos | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi PredictTask --date-ing 2021-05-10 --type-ing consecutive |
+| PredictTrainTask    |  Genera tabla de predicciones para entrenamiento | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi PredictTrainTask --date-ing 2021-05-10 --type-ing consecutive |
 | TestBiasFairnessTask    |  Checa que la tabla de sesgo e inequidad exista y verifica que el número de columnas sea 8 | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TestBiasFairnessTask --date-ing 2021-05-10 --type-ing consecutive |
 | BiasFairnessTask    |  Construye tabla de sesgos e inequidades | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi BiasFairnessTask --date-ing 2021-05-10 --type-ing consecutive |
 | SeleccionMetaTask    |  Genera metadatos asociados a la selección del modelo        | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi SeleccionMetaTask --date-ing 2021-05-10 --type-ing consecutive     |
 | TestSeleccionTask    |  Se verifica que el mejor modelo seleccionado sea un Decision Tree (genera error si no)      | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TestSeleccionTask --date-ing 2021-05-10 --type-ing consecutive     |
-| SeleccionTask    |  Realiza selección del mejor modelo con base en la métrica F1 Score  | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi SeleccionTask --date-ing 2021-05-10 --type-ing consecutive     |
+| SeleccionTask    |  Realiza selección del mejor modelo con base en la métrica Precision  | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi SeleccionTask --date-ing 2021-05-10 --type-ing consecutive     |
 | TrainMetaTask    |  Genera metadatos asociados a Entrenamiento      | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TrainMetaTask --date-ing 2021-05-10 --type-ing consecutive     |
 | TestTrainTask    |  Se revisa que la base no esté vacía y además cuente con 8 columnas       | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TestTrainTask --date-ing 2021-05-10 --type-ing consecutive     |
 | TrainTask    |  Realiza entrenamiento del modelo      | PYTHONPATH=$PWD luigi --module src.pipeline.tareas_luigi TrainTask --date-ing 2021-05-10 --type-ing consecutive     |
@@ -218,14 +223,20 @@ psql -h NombreEndpoint&port -U nombreusuario -d food
 Y luego ejecutar el siguiente comando para poder ver los esquemas asociados a la base food para posteriormente hacer los querys que se deseen.
 
 ```bash
-set search_path=clean,meta,models,public;
+set search_path=api,clean,meta,models,pred,public;
 ```
 
-#### 10. DAG con las tasks del Checkpoint 6 en verde
+#### 10. DAG con las tasks del Checkpoint Final en verde
 
-Una vez ejecutado los comandos anteriores, se presenta como ejemplo una captura de nuestro DAG con todos los tasks en "Done".
+Una vez ejecutado los comandos anteriores, se presenta como ejemplo una captura de nuestro DAG final con todos los tasks en "Done".
 
-<img src="https://dl.dropboxusercontent.com/s/nsd52w3ij8aqvm8/Tast_status.jpg?dl=0" heigth="500" width="1500">
+10.1. DAG desde Task de Ingestión hasta Monitoreo
+
+<img src="https://dl.dropboxusercontent.com/s/7zx2sida5c7hpbk/DAG_Checkpoint7.png?dl=0" heigth="500" width="1500">
+
+10.2. DAG desde Task de Feature Engineering hasta BiasFairnessMetaTask
+
+<img src="https://dl.dropboxusercontent.com/s/1jxlohzqeiln9fu/DAG_Checkpoint7p2.png?dl=0" heigth="500" width="1500">
 
 ## 11. Estructura básica del proyecto
 
