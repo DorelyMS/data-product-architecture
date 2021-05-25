@@ -1689,7 +1689,7 @@ class PredictTask(CopyToTable):
 
 
     def requires(self):
-        return FeatEngTask(bucket_name=self.bucket_name,
+        return FeatEngMetaTask(bucket_name=self.bucket_name,
             type_ing=self.type_ing,
             date_ing=self.date_ing)
 
