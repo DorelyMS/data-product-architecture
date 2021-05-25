@@ -48,10 +48,10 @@ def fun_monit(score_pred, score_mod):
     df2 = score_pred
     
 
-    fig1 = px.histogram(df1, x='Score_Modelo',
+    fig1 = px.histogram(df1, x='score_1',
                        barmode="overlay")
 
-    fig2 = px.histogram(df2, x='Score_Predicciones',
+    fig2 = px.histogram(df2, x='score_1',
                        barmode="overlay")
     
     fig1.update_layout(
