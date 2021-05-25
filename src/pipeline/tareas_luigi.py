@@ -82,6 +82,8 @@ class IngTask(luigi.Task):
         for line in results:
             data.append(line)
 
+        print("Lineas ingesta inicial: ", len(data))
+
         with self.output().open('w') as outfile:
             pickle.dump(data, outfile)
 
@@ -524,6 +526,8 @@ class PrepTask(CopyToTable):
 
         num_registros = len(file),
         variables = list(file[0].keys())
+
+        print("Lineas cargadas cleaning: ", num_registros)
 
         for p in file:
             d = dict(self.columns)
@@ -1745,6 +1749,8 @@ class PredictTask(CopyToTable):
         res = res[['inspection_id', 'license_num', 'inspection_date', 'fecha_ejecucion', 
         'modelo', 'score_0', 'score_1', 'predict', 'pass']]
 
+        print("Lineas cargadas en prediccion: ", len(res))
+
         for r in res.itertuples():
             line = r[1:]
             yield line
@@ -1916,6 +1922,15 @@ class AlmacenamientoTask(CopyToTable):
 
     def rows(self):
 
+        if self.type_ing == 'consecutive':
+            fecha_inicial = (self.date_ing - datetime.timedelta(days=6)).strftime("%Y-%m-%d")
+        elif self.type_ing == 'initial':
+            fecha_inicial = '2020-01-01'
+        else:
+            raise Error("Tipo de ingestion invalido")
+        fecha_final =  self.date_ing.strftime("%Y-%m-%d")
+ 
+
         ## Se obtienen los registros a predecir
         conn = psycopg2.connect(dbname=self.database,
                         user=self.user,
@@ -1925,10 +1940,13 @@ class AlmacenamientoTask(CopyToTable):
         with score as (
             select license_num, inspection_date, fecha_ejecucion, score_1, predict,
             rank() over(partition by license_num order by score_1 desc) as num
-            from pred.predicciones)
+            from pred.predicciones
+            where inspection_date between '{fo}' and '{ff}')
             select distinct license_num, inspection_date, fecha_ejecucion, score_1, predict from score where num=1
-        """
+        """.format(fo = fecha_inicial, ff = fecha_final)
         df = pd.read_sql_query(query, con=conn)
+
+        print("Lineas cargadas en api: ", len(df))
 
         for r in df.itertuples():
             line = r[1:]
@@ -1964,6 +1982,14 @@ class MonitoreoTask(CopyToTable):
 
     def rows(self):
 
+        if self.type_ing == 'consecutive':
+            fecha_inicial = (self.date_ing - datetime.timedelta(days=6)).strftime("%Y-%m-%d")
+        elif self.type_ing == 'initial':
+            fecha_inicial = '2020-01-01'
+        else:
+            raise Error("Tipo de ingestion invalido")
+        fecha_final =  self.date_ing.strftime("%Y-%m-%d")
+
         ## Se obtienen los registros a predecir
         conn = psycopg2.connect(dbname=self.database,
                         user=self.user,
@@ -1972,8 +1998,11 @@ class MonitoreoTask(CopyToTable):
         query = """
         select score_0, score_1
         from pred.predicciones
-        """
+        where inspection_date between '{fo}' and '{ff}'
+        """.format(fo = fecha_inicial, ff = fecha_final)
         df = pd.read_sql_query(query, con=conn)
+
+        print("Lineas cargadas en monitoreo: ", len(df))
 
         for r in df.itertuples():
             line = r[1:]
