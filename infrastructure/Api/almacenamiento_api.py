@@ -47,7 +47,8 @@ class ResultadoEstablecimiento(Resource):
 
 	@api.marshal_with(model_1)
 	def get(self, license_num):
-		match = Match.query.filter_by(license_num=license_num).all()
+		match = Match.query.filter_by(license_num=license_num).\
+		order_by(Match.inspection_date.desc()).limit(1).all()
 
 		return match #{'inspection_id': inspection_id,  'prediccion': match}
 
