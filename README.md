@@ -57,7 +57,7 @@ La frecuencia de la actualización del dataset [Chicago Food Inspections](https:
 
 El pipeline diseñado para el proyecto incluye dos posibles caminos que inician con un proceso de ETL común.
 
-<img src="https://github.com/DorelyMS/data-product-architecture/tree/main/docs/Pipeline.png">
+![Imagen pipeline](https://github.com/DorelyMS/data-product-architecture/blob/main/docs/Pipeline.png)
 
 ### ETL
 
