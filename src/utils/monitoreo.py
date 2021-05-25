@@ -26,13 +26,14 @@ def auxiliar2():
 
     # Conexion postgres
 
-    predictions = pd.read_sql_query("select score_0, score_1 from pred.predicciones;", con=conn)
+    score_pred = pd.read_sql_query("select * from api.monitoreo;", con=conn)
+    score_mod = pd.read_sql_query("select score_0, score_1 from models.predicciones_train;", con=conn)
     conn.close()
 
-    fun_monit(predictions)
+    fun_monit(score_pred, score_mod)
 
 
-def fun_monit(predictions):
+def fun_monit(score_pred, score_mod):
     external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
     app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
     colors = {
@@ -43,41 +44,56 @@ def fun_monit(predictions):
 
     # assume you have a "long-form" data frame
     # see https://plotly.com/python/px-arguments/ for more options
-    df = predictions
-    # df = pd.DataFrame({
-    #    "Fruit": ["Apples", "Oranges", "Bananas", "Apples", "Oranges", "Bananas"],
-    #    "Amount": [4, 1, 2, 2, 4, 5],
-    #    "City": ["SF", "SF", "SF", "Montreal", "Montreal", "Montreal"]
-    # })
+    df1 = score_mod
+    df2 = score_pred
+    
 
-    fig = px.histogram(df, x='score_0',
-                       # y="Amount", color="City",
+    fig1 = px.histogram(df1, x='Score_Modelo',
                        barmode="overlay")
 
-    fig.update_layout(
+    fig2 = px.histogram(df2, x='Score_Predicciones',
+                       barmode="overlay")
+    
+    fig1.update_layout(
         plot_bgcolor=colors['background'],
         paper_bgcolor=colors['background'],
         font_color=colors['text']
     )
+    
+    fig2.update_layout(
+        plot_bgcolor=colors['background'],
+        paper_bgcolor=colors['background'],
+        font_color=colors['text']
+    )    
+    
+    
+    app.layout = html.Div(children=[
+        # All elements from the top of the page
+        html.Div([
+            html.H1(children='Histograma de Scores Modelo'),
 
-    app.layout = html.Div(style={'backgroundColor': colors['background']}, children=[
-        html.H1(
-            children='Histograma de Scores',
-            style={
-                'textAlign': 'center',
-                'color': colors['text']
-            }
-        ),
+            html.Div(children='''
+                Dash: A web application framework for Python.
+            '''),
 
-        html.Div(children='Score_0', style={
-            'textAlign': 'center',
-            'color': colors['text']
-        }),
+            dcc.Graph(
+                id='graph1',
+                figure=fig1
+            ),  
+        ]),
+        # New Div for all elements in the new 'row' of the page
+        html.Div([
+            html.H1(children='Histograma de Scores Predicciones'),
 
-        dcc.Graph(
-            id='example-graph-2',
-            figure=fig
-        )
+            html.Div(children='''
+                Dash: A web application framework for Python.
+            '''),
+
+            dcc.Graph(
+                id='graph2',
+                figure=fig2
+            ),  
+        ]),
     ])
     app.run_server(host='0.0.0.0', port=8050,debug=True)
 
