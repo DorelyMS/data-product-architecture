@@ -296,7 +296,8 @@ Una vez ejecutado los comandos anteriores, se presenta como ejemplo una captura 
 │
 ├── .gitignore            <- Avoids uploading data, credentials, outputs, system files etc
 │
-├── infrastructure
+├── infrastructure 
+    ├── Api
 ├── sql
 ├── setup.py
 ├── src                   <- Source code for use in this project.
