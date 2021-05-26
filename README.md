@@ -239,6 +239,30 @@ Y luego ejecutar el siguiente comando para poder ver los esquemas asociados a la
 set search_path=api,clean,meta,models,pred,public;
 ```
 
+
+#### Ejemplos de Ejecución Flask
+
+* Para la ejecución de nuestra API vía Flask, debemos ejecutar el siquiente comando, en una terminal con el Pyenv activado y posicionado en la carpeta data-product-architecture:
+ 
+```bash
+export PYTHONPATH=$PWD
+export FLASK_APP=./infrastructure/Api/almacenamiento_api.py 
+flask run --host=0.0.0.0
+```
+Una vez ejecutados los comandos anteriores, puedes abrir un browser y escribir *localhost:5000/* para ver los dos endpoints para hacer consultas con respecto a un ID de establecimiento y una fecha determinada para generar predicciones.
+
+
+#### Ejemplos de Ejecución Dash
+
+* Para la ejecución del nuestro dashboard de monitoreo, debemos ejecutar el siquiente comando, en una terminal con el Pyenv activado y posicionado en la carpeta data-product-architecture:
+ 
+```bash
+export PYTHONPATH=$PWD
+python ./src/utils/monitoreo.py
+```
+Una vez ejecutados los comandos anteriores, puedes abrir un browser y escribir *localhost:8050/* para ver los dos histogramas de scores asociados al modelo, el primero muestra los datos del entrenamiento y el segundo la gráfica de las predicciones consecutivas que va generando el modelo.
+
+
 #### 10. DAG con las tasks del Checkpoint Final en verde
 
 Una vez ejecutado los comandos anteriores, se presenta como ejemplo una captura de nuestro DAG final con todos los tasks en "Done".
