@@ -162,9 +162,9 @@ Una vez que se tienen las credenciales, deben crearse cada una de los esquemas y
 Los scripts se ejecutan en postgres, desde el home del repositorio,  de la siguiente forma:
 
 ```sql
+\i ./sql/create_db.sql
 \i ./sql/create_bias_fairness_table.sql
 \i ./sql/create_clean_table.sql
-\i ./sql/create_db.sql
 \i ./sql/create_facility_table.sql
 \i ./sql/create_feat_eng_table.sql
 \i ./sql/create_metadata_table.sql
