@@ -157,7 +157,24 @@ db:
  host: "your_end-point"
  port: "your_port"
 ```
+Una vez que se tienen las credenciales, deben crearse cada una de los esquemas y tablas que se usarán usando los scripts en **./sql/create_*.sql ** (excepto el código de **drop_db.sql**.
 
+Los scripts se ejecutan en postgres, desde el home del repositorio,  de la siguiente forma:
+
+```sql
+\i ./sql/create_bias_fairness_table.sql
+\i ./sql/create_clean_table.sql
+\i ./sql/create_db.sql
+\i ./sql/create_facility_table.sql
+\i ./sql/create_feat_eng_table.sql
+\i ./sql/create_metadata_table.sql
+\i ./sql/create_models_table.sql
+\i ./sql/create_monitoreo_table.sql
+\i ./sql/create_predict_table.sql
+\i ./sql/create_predict_train_table.sql
+\i ./sql/create_scores_table.sql
+\i ./sql/create_zip_table.sql
+```
 
 ## 9. Ejecución Pipeline
 
