@@ -157,7 +157,7 @@ db:
  host: "your_end-point"
  port: "your_port"
 ```
-Una vez que se tienen las credenciales, deben crearse cada una de los esquemas y tablas que se usarán usando los scripts en **./sql/create_*.sql ** (excepto el código de **drop_db.sql**.
+Una vez que se tienen las credenciales, deben crearse cada una de los esquemas y tablas que se usarán usando los scripts en **./sql/ ** (excepto el código de **drop_db.sql**).
 
 Los scripts se ejecutan en postgres, desde el home del repositorio,  de la siguiente forma:
 
